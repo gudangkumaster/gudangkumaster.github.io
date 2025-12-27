@@ -1,0 +1,17 @@
+{
+    "name": "GudangDuit",
+    "short_name": "GudangDuit",
+    "start_url": "../index.html",
+    "display": "standalone",
+    "background_color": "#FFD700",
+    "theme_color": "#FFD700",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "images/icon.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

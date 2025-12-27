@@ -95,4 +95,5 @@ We solved the infamous Pull-To-Refresh vs Modal conflict by implementing a **Nuc
 
 ---
 
-**Made with 💻 and ☕ by Nadya & The AI Team.**
+**Made with 💻 and ☕ by Gudangku Team.**
+

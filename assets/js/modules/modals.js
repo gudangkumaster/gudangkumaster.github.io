@@ -34,6 +34,8 @@ export function initModals() {
     if (closeScanOptionsX && scanOptionsModal) {
         closeScanOptionsX.addEventListener('click', () => {
             scanOptionsModal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+            if (window.resumePTR) window.resumePTR();
         });
     }
 
@@ -41,6 +43,8 @@ export function initModals() {
     if (confirmYesBtn && confirmModal) {
         confirmYesBtn.addEventListener('click', () => {
             confirmModal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+            if (window.resumePTR) window.resumePTR();
             if (confirmCallback) {
                 confirmCallback();
                 confirmCallback = null;
@@ -51,6 +55,8 @@ export function initModals() {
     if (confirmNoBtn && confirmModal) {
         confirmNoBtn.addEventListener('click', () => {
             confirmModal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+            if (window.resumePTR) window.resumePTR();
             confirmCallback = null;
             if (window.soundManager) window.soundManager.playClick();
         });
@@ -61,6 +67,28 @@ export function initModals() {
     window.showAppConfirm = showConfirm;
     window.openManualModal = openManualModal;
     window.hideManualModal = hideManualModal;
+
+    // --- Click Outside to Close ---
+    const overlays = ['manual-modal', 'nb-custom-modal', 'scan-options-modal', 'confirm-modal'];
+    overlays.forEach(id => {
+        const el = getEl(id);
+        if (el) {
+            el.addEventListener('click', (e) => {
+                if (e.target === el) {
+                    if (id === 'manual-modal') hideManualModal();
+                    else if (id === 'nb-custom-modal') hideModal();
+                    else {
+                        el.classList.remove('active');
+                        document.body.classList.remove('modal-open');
+                        if (window.resumePTR) window.resumePTR();
+
+                        // Verify callback cleanup for confirm
+                        if (id === 'confirm-modal' && confirmCallback) confirmCallback = null;
+                    }
+                }
+            });
+        }
+    });
 }
 
 export function showModal(title, message) {
@@ -70,6 +98,8 @@ export function showModal(title, message) {
     getEl('modal-title').innerText = title;
     getEl('modal-content').innerHTML = message;
     customModal.classList.add('active');
+    document.body.classList.add('modal-open');
+    if (window.pausePTR) window.pausePTR();
 
     // Play alert sound based on title
     if (window.soundManager) {
@@ -86,7 +116,11 @@ export function showModal(title, message) {
 
 export function hideModal() {
     const customModal = getEl('nb-custom-modal');
-    if (customModal) customModal.classList.remove('active');
+    if (customModal) {
+        customModal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        if (window.resumePTR) window.resumePTR();
+    }
 }
 
 export function openManualModal() {
@@ -130,6 +164,8 @@ export function openManualModal() {
         }
 
         manualModal.classList.add('active');
+        document.body.classList.add('modal-open');
+        if (window.pausePTR) window.pausePTR();
     }
 }
 
@@ -137,6 +173,8 @@ export function hideManualModal() {
     const manualModal = getEl('manual-modal');
     if (manualModal) {
         manualModal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        if (window.resumePTR) window.resumePTR();
 
         // Reset edit mode if active
         const saveBtn = getEl('save-manual-btn');
@@ -167,6 +205,8 @@ export function showConfirm(title, message, onConfirm) {
     getEl('confirm-message').innerHTML = message;
     confirmCallback = onConfirm;
     confirmModal.classList.add('active');
+    document.body.classList.add('modal-open');
+    if (window.pausePTR) window.pausePTR();
 
     if (window.soundManager) window.soundManager.playAlert();
 }

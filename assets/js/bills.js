@@ -93,9 +93,20 @@ class BillManager {
             }
             if (closeBtn && !closeBtn.onclick) {
                 closeBtn.onclick = () => {
+                    document.body.classList.remove('modal-open');
                     document.getElementById('bill-modal').classList.remove('active');
+                    if (window.resumePTR) window.resumePTR();
                     if (window.soundManager) window.soundManager.playClick();
                 };
+                // Background Click Close
+                const modal = document.getElementById('bill-modal');
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        document.body.classList.remove('modal-open');
+                        modal.classList.remove('active');
+                        if (window.resumePTR) window.resumePTR();
+                    }
+                });
             }
             if (payBtn && !payBtn.onclick) {
                 payBtn.onclick = () => {
@@ -108,15 +119,28 @@ class BillManager {
                     if (window.soundManager) window.soundManager.playClick();
                     if (this.selectedBillId) {
                         this.deleteBill(this.selectedBillId);
+                        document.body.classList.remove('modal-open');
                         document.getElementById('todo-context-menu').classList.remove('active');
+                        if (window.resumePTR) window.resumePTR();
                     }
                 };
             }
             if (closeContextBtn && !closeContextBtn.onclick) {
                 closeContextBtn.onclick = () => {
+                    document.body.classList.remove('modal-open');
                     document.getElementById('todo-context-menu').classList.remove('active');
+                    if (window.resumePTR) window.resumePTR();
                     if (window.soundManager) window.soundManager.playClick();
                 };
+                // Background Click Close
+                const modal = document.getElementById('todo-context-menu');
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        document.body.classList.remove('modal-open');
+                        modal.classList.remove('active');
+                        if (window.resumePTR) window.resumePTR();
+                    }
+                });
             }
         }, 1000);
     }
@@ -125,6 +149,8 @@ class BillManager {
         const modal = document.getElementById('bill-modal');
         if (modal) {
             modal.classList.add('active');
+            document.body.classList.add('modal-open');
+            if (window.pausePTR) window.pausePTR();
             if (window.soundManager) window.soundManager.playClick();
 
             // Set default date to TODAY to avoid "2005" issues
@@ -246,7 +272,9 @@ class BillManager {
                 }
             }
 
+            document.body.classList.remove('modal-open');
             document.getElementById('todo-context-menu').classList.remove('active');
+            if (window.resumePTR) window.resumePTR();
             this.selectedBillId = null;
         } catch (err) {
             console.error("Error paying bill:", err);

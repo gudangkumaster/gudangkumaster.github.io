@@ -126,6 +126,29 @@ const settingsHTML = `
             </div>
         </div>
 
+        <!-- Background Music Panel -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header"
+                style="background: transparent; border-bottom: none; padding: 15px 15px 0 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 1.5rem;">🎵</span>
+                    <h2
+                        style="margin: 0; font-size: 1.1rem; letter-spacing: 2px; font-weight: 900; color: #555; font-family: 'Courier New', Courier, monospace;">
+                        BACKGROUND MUSIC</h2>
+                </div>
+                <label class="toggle-switch" style="scale: 0.9; margin: 0;">
+                    <input type="checkbox" id="bgm-toggle"
+                        onchange="window.toggleBGM(this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="card-body" style="padding: 15px; padding-top: 5px;">
+                <p style="margin: 0; font-size: 0.85rem; opacity: 0.8; font-weight: bold; line-height: 1.4;">
+                    Play relaxing Lo-Fi beats to stay focused.
+                </p>
+            </div>
+        </div>
+
         <!-- Home Visibility Panel (New) -->
         <div class="card" style="margin-bottom: 0;">
             <div class="card-header"

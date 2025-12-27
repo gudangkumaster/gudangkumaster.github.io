@@ -22,6 +22,12 @@ window.initSettings = function () {
         const isEnabled = soundManager.isAlertSoundEnabled();
         alertToggleEl.checked = isEnabled;
         applyAlertSoundVisualState(isEnabled);
+        applyAlertSoundVisualState(isEnabled);
+    }
+
+    const bgmToggleEl = document.getElementById('bgm-toggle');
+    if (bgmToggleEl) {
+        bgmToggleEl.checked = soundManager.isBGMEnabled();
     }
 
     // Initialize Click Sound Pack Radios
@@ -80,23 +86,61 @@ window.initSettings = function () {
 };
 
 // Helper: Update Storage Usage Display
-function updateStorageUsage() {
-    let total = 0;
+async function updateStorageUsage() {
+    const usageEl = document.getElementById('storage-usage');
+    if (!usageEl) return;
+
+    let totalBytes = 0;
+
+    // 1. LocalStorage Calculation
     for (const key in localStorage) {
         if (localStorage.hasOwnProperty(key)) {
-            total += ((localStorage[key].length + key.length) * 2); // 2 bytes per char
+            totalBytes += ((localStorage[key].length + key.length) * 2);
         }
     }
 
-    const usageEl = document.getElementById('storage-usage');
-    if (usageEl) {
-        const kb = (total / 1024).toFixed(2);
-        usageEl.textContent = `${kb} KB`;
-
-        if (kb > 1024) {
-            usageEl.textContent = `${(kb / 1024).toFixed(2)} MB`;
+    // 2. Cache API & Other Storage (if supported)
+    if ('storage' in navigator && 'estimate' in navigator.storage) {
+        try {
+            const estimate = await navigator.storage.estimate();
+            if (estimate.usage && estimate.usage > 0) {
+                totalBytes = estimate.usage;
+            }
+        } catch (e) {
+            console.warn('Storage estimate failed:', e);
         }
     }
+
+    // Fallback: If estimate is 0 (likely file:// protocol or unsecure context), 
+    // manually calculate known caches
+    if (totalBytes === 0 && 'caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            for (const name of cacheNames) {
+                const cache = await caches.open(name);
+                const requests = await cache.keys();
+                for (const request of requests) {
+                    const response = await cache.match(request);
+                    if (response) {
+                        const blob = await response.blob();
+                        totalBytes += blob.size;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Manual cache calculation failed:', e);
+        }
+    }
+
+    // formatting
+    let displayText = '0 KB';
+    if (totalBytes > 1024 * 1024) {
+        displayText = `${(totalBytes / (1024 * 1024)).toFixed(2)} MB`;
+    } else {
+        displayText = `${(totalBytes / 1024).toFixed(2)} KB`;
+    }
+
+    usageEl.textContent = displayText;
 }
 
 // Internal Helper for Click Sound Visuals
@@ -143,6 +187,14 @@ window.toggleAlertSound = function (enabled) {
     }
     applyAlertSoundVisualState(enabled);
     console.log('🔔 Alert sound:', enabled ? 'enabled' : 'disabled');
+};
+
+// Toggle BGM (Called from HTML onchange)
+window.toggleBGM = function (enabled) {
+    if (window.soundManager) {
+        window.soundManager.toggleBGM(enabled);
+    }
+    console.log('🎵 BGM:', enabled ? 'playing' : 'paused');
 };
 
 // --- Home Visibility Logic ---

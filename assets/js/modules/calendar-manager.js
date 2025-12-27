@@ -5,6 +5,7 @@
 
 class CalendarManager {
     constructor() {
+        console.log('🗓️ CalendarManager: Constructor called');
         this.currentDate = new Date();
         this.selectedDate = null;
         this.targetInputId = null;
@@ -14,10 +15,14 @@ class CalendarManager {
     }
 
     init() {
+        console.log('🗓️ CalendarManager: init called');
         if (this.initialized) return;
 
         const modal = document.getElementById(this.modalId);
-        if (!modal) return; // Modal HTML might not be injected yet
+        if (!modal) {
+            console.error('❌ CalendarManager: Modal not found!');
+            return;
+        }
 
         // Controls
         document.getElementById('close-calendar-x').addEventListener('click', () => this.close());
@@ -33,6 +38,7 @@ class CalendarManager {
     }
 
     open(targetInputId, triggerBtnId) {
+        console.log(`🗓️ CalendarManager: Open called for ${targetInputId}`);
         // Ensure initialized (in case injected late)
         if (!this.initialized) this.init();
 
@@ -50,10 +56,14 @@ class CalendarManager {
 
         this.render();
         document.getElementById(this.modalId).classList.add('active');
+        document.body.classList.add('modal-open');
+        if (window.pausePTR) window.pausePTR();
     }
 
     close() {
         document.getElementById(this.modalId).classList.remove('active');
+        document.body.classList.remove('modal-open');
+        if (window.resumePTR) window.resumePTR();
     }
 
     changeMonth(delta) {

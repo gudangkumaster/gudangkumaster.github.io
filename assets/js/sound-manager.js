@@ -220,8 +220,26 @@ class SoundManager {
         this.audioGen = new AudioGenerator();
         this.clickSoundEnabled = this.loadPreference('clickSound', true);
         this.alertSoundEnabled = this.loadPreference('alertSound', true);
+        this.bgmEnabled = this.loadPreference('bgmEnabled', false); // Default OFF
         this.selectedClickPack = this.loadPreference('clickSoundPack', 'classic');
         this.selectedAlertPack = this.loadPreference('alertSoundPack', 'hidog');
+
+        // BGM System
+        this.bgmAudio = new Audio();
+        this.bgmAudio.volume = 0.3; // 30% volume default
+        this.currentTrackIndex = -1;
+        this.playlist = [
+            "Lukrembo - Bread.mp3",
+            "Lukrembo - Sunflower.mp3",
+            "massobeats - floral.mp3",
+            "massobeats - gingersweet.mp3",
+            "massobeats - honey jam.mp3"
+        ];
+
+        // Handle Track End (Loop next random)
+        this.bgmAudio.addEventListener('ended', () => {
+            this.playRandomTrack();
+        });
 
         this.clickPacks = {
             classic: {
@@ -278,6 +296,17 @@ class SoundManager {
                 play: () => this.audioGen.playAlertBell()
             }
         };
+
+        // Initialize BGM if enabled
+        if (this.bgmEnabled) {
+            // Browser might block auto-play, so we wait for first interaction usually
+            // but we'll try to init anyway
+            document.addEventListener('click', () => {
+                if (this.bgmEnabled && this.bgmAudio.paused) {
+                    this.playRandomTrack();
+                }
+            }, { once: true });
+        }
     }
 
     loadPreference(key, defaultValue) {
@@ -298,6 +327,87 @@ class SoundManager {
         this.alertSoundEnabled = enabled;
         this.savePreference('alertSound', enabled);
     }
+
+    // --- BGM METHODS ---
+
+    toggleBGM(enabled) {
+        this.bgmEnabled = enabled;
+        this.savePreference('bgmEnabled', enabled);
+
+        if (enabled) {
+            if (this.bgmAudio.paused) this.playRandomTrack();
+        } else {
+            this.bgmAudio.pause();
+        }
+    }
+
+    async playRandomTrack() {
+        if (!this.bgmEnabled) return;
+
+        // Pick random index different from current
+        let nextIndex;
+        do {
+            nextIndex = Math.floor(Math.random() * this.playlist.length);
+        } while (nextIndex === this.currentTrackIndex && this.playlist.length > 1);
+
+        this.currentTrackIndex = nextIndex;
+        const trackName = this.playlist[this.currentTrackIndex];
+        const url = `assets/audio/${trackName}`;
+
+        console.log(`🎵 Preparing to play: ${trackName}`);
+
+        try {
+            // Try enabling Cache API
+            if ('caches' in window) {
+                const cacheName = 'bgm-cache-v1';
+                const cache = await caches.open(cacheName);
+                const cachedResponse = await cache.match(url);
+
+                if (cachedResponse) {
+                    // Serve from cache
+                    console.log(`📦 Serving from cache: ${trackName}`);
+                    const blob = await cachedResponse.blob();
+                    this.bgmAudio.src = URL.createObjectURL(blob);
+                } else {
+                    // Fetch and cache
+                    console.log(`⬇️ Downloading and caching: ${trackName}`);
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        cache.put(url, response.clone());
+                        const blob = await response.blob();
+                        this.bgmAudio.src = URL.createObjectURL(blob);
+                    } else {
+                        // Fallback handling
+                        this.bgmAudio.src = url;
+                    }
+                }
+            } else {
+                // No cache support
+                this.bgmAudio.src = url;
+            }
+
+            this.bgmAudio.play().catch(e => console.warn("BGM Auto-play blocked:", e));
+
+        } catch (err) {
+            console.error("BGM Cache Error:", err);
+            // Fallback
+            this.bgmAudio.src = url;
+            this.bgmAudio.play().catch(e => console.warn("BGM Auto-play blocked:", e));
+        }
+    }
+
+    initBGM() {
+        // Called by app.js on start
+        if (this.bgmEnabled && this.bgmAudio.paused) {
+            this.playRandomTrack();
+        }
+    }
+
+    isBGMEnabled() {
+        return this.bgmEnabled;
+    }
+
+    // --- END BGM ---
 
     selectClickPack(packId) {
         if (this.clickPacks[packId]) {
@@ -371,4 +481,5 @@ class SoundManager {
 
 // Export for global use
 window.soundManager = new SoundManager();
+
 console.log('🔊 Sound Manager loaded with', Object.keys(window.soundManager.clickPacks).length, 'click sounds and', Object.keys(window.soundManager.alertPacks).length, 'alert sounds');

@@ -52,22 +52,35 @@ const homeHTML = `
         <!-- Search Bar & Date Filter -->
         <div class="nb-search-container mt-2" style="display: flex; border: 3px solid #000; background: white; padding: 0;">
             <input type="text" id="transaction-search" class="nb-input" placeholder="Search..."
-                style="flex: 2; border: none; border-right: 3px solid #000; margin: 0; box-shadow: none;">
-            <div style="flex: 1; position: relative; display: flex; align-items: stretch;">
+                style="flex: 1; border: none; border-right: 3px solid #000; margin: 0; box-shadow: none;">
+            <div style="width: 150px; flex: none; position: relative; display: flex; align-items: stretch;">
                 <input type="date" id="transaction-date" 
                     style="position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"
-                    onchange="const btn = document.getElementById('date-trigger-btn'); if(this.value) { btn.innerHTML = this.value.split('-').reverse().join('/'); btn.classList.add('active'); } else { btn.innerHTML = ''; btn.classList.remove('active'); btn.appendChild(document.getElementById('date-icon-svg').cloneNode(true)); }">
+                    onchange="const textSpan = document.getElementById('date-placeholder-text'); const clearIcon = document.getElementById('date-clear-icon'); const calIcon = document.getElementById('date-icon-svg'); if(this.value) { textSpan.innerHTML = this.value.split('-').reverse().join('/'); textSpan.style.color = '#000'; textSpan.style.fontWeight='900'; if(clearIcon) clearIcon.style.display = 'block'; if(calIcon) calIcon.style.display = 'none'; } else { textSpan.innerHTML = 'DATE'; textSpan.style.color = '#aaa'; if(clearIcon) clearIcon.style.display = 'none'; if(calIcon) calIcon.style.display = 'block'; }">
                 
                 <button id="date-trigger-btn" type="button" 
-                    style="width: 100%; height: 100%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; padding-left: 15px; font-family: var(--font-main); font-weight: 900; font-size: 1rem;"
-                    onclick="window.calendarManager.open('transaction-date', 'date-trigger-btn')">
+                    style="width: 100%; height: 100%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-family: var(--font-main); font-weight: 900; font-size: 0.9rem;"
+                    onclick="if(event.target.closest('#date-clear-icon')) return; window.calendarManager.open('transaction-date', 'date-trigger-btn')">
                     <span id="date-placeholder-text" style="color: #aaa; font-size: 0.9rem;">DATE</span>
-                    <svg id="date-icon-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <!-- Clear Icon (Hidden by default) -->
+                        <div id="date-clear-icon" style="display: none; cursor: pointer;"
+                             onclick="event.stopPropagation(); if(window.soundManager) window.soundManager.playClick(); const input = document.getElementById('transaction-date'); input.value = ''; input.dispatchEvent(new Event('change'));">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </div>
+
+                        <!-- Calendar Icon (Visible by default) -->
+                        <svg id="date-icon-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
                 </button>
             </div>
         </div>

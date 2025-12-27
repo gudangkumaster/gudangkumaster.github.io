@@ -45,6 +45,13 @@ body {
     overflow-x: hidden;
 }
 
+/* Global Helper: Lock Scroll */
+.modal-open {
+    overflow: hidden !important;
+    touch-action: none;
+    /* Helps prevent pull-to-refresh on mobile */
+}
+
 /* Background Patterns */
 .bg-dot {
     background-image: radial-gradient(var(--nb-black) 2px, transparent 2px);

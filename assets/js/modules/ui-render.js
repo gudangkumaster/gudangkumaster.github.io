@@ -47,8 +47,22 @@ export function initUI(onContextAction) {
     if (closeContextX) {
         closeContextX.addEventListener('click', () => {
             if (contextMenuModal) contextMenuModal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+            if (window.resumePTR) window.resumePTR();
             selectedTransactionId = null;
         });
+
+        // Background Click Close
+        if (contextMenuModal) {
+            contextMenuModal.addEventListener('click', (e) => {
+                if (e.target === contextMenuModal) {
+                    contextMenuModal.classList.remove('active');
+                    document.body.classList.remove('modal-open');
+                    if (window.resumePTR) window.resumePTR();
+                    selectedTransactionId = null;
+                }
+            });
+        }
     }
 
     if (editBtn) {
@@ -225,11 +239,18 @@ function selectTransaction(item, type) {
         collection: (type === 'income' || type === 'invest') ? 'income' : 'expenses',
         data: item
     };
-    if (contextMenuModal) contextMenuModal.classList.add('active');
+    if (contextMenuModal) {
+        contextMenuModal.classList.add('active');
+        document.body.classList.add('modal-open');
+        if (window.pausePTR) window.pausePTR();
+    }
 }
 
 export function closeContextMenu() {
-    if (contextMenuModal) contextMenuModal.classList.remove('active');
+    if (contextMenuModal) {
+        contextMenuModal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+    }
     selectedTransactionId = null;
 }
 

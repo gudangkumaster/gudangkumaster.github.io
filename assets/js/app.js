@@ -7,6 +7,7 @@ import { initModals, showModal, showConfirm, hideManualModal } from "./modules/m
 import { initUI, showLoadingState, updateDashboard, updateBudgetUI, clearTransactionList, renderTransactionItem, closeContextMenu, renderPaginationControls, renderAnalytics } from "./modules/ui-render.js";
 import { initTransactionService, addTransaction, updateTransaction, deleteTransaction } from "./modules/transaction-service.js";
 import { initScanner } from "./modules/scanner.js";
+import "./modules/calendar-manager.js";
 
 // --- Pull To Refresh Setup (Global Wrappers for SPA) ---
 window.currentPTR = null;
@@ -16,6 +17,17 @@ window.initHomePTR = () => {
         if (window.currentPTR) window.currentPTR.destroy();
 
         window.currentPTR = new PullToRefresh({
+            shouldPullToRefresh: () => {
+                // 1. Check Global Modal State (Robust method)
+                const isModalOpen = document.body.classList.contains('modal-open');
+
+                // 2. Check if user is typing (Input/Textarea focused)
+                const activeEl = document.activeElement;
+                const isInputActive = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+                // Return true only if NO modal is open AND NO input is focused AND verified top
+                return !isModalOpen && !isInputActive && window.scrollY === 0;
+            },
             onRefresh: async () => {
                 console.log('🔄 Refreshing Home Data...');
                 if (window.soundManager) window.soundManager.playClick();
@@ -59,6 +71,22 @@ window.disablePTR = () => {
     // No longer removing .ptr-container as elements are static
 };
 
+// Global Helpers for Modals
+window.pausePTR = () => {
+    // console.log('⏸️ Pausing PTR');
+    window.disablePTR();
+};
+
+window.resumePTR = () => {
+    // console.log('▶️ Resuming PTR');
+    // Simple debounce to prevent rapid re-init issues
+    setTimeout(() => {
+        if (!document.body.classList.contains('modal-open')) {
+            window.initHomePTR();
+        }
+    }, 100);
+};
+
 // --- Global State for Data Managment ---
 let allTransactions = [];
 let filteredTransactions = [];
@@ -96,9 +124,37 @@ async function initApp() {
     }
 
     // 5. Global Sound Listener
+    // (Listener is added outside initApp, but we can init BGM here)
+    if (window.soundManager) {
+        window.soundManager.initBGM();
+    }
     document.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .btn, .tab-item, .nav-link, .fab-manual, .scanner-trigger, .custom-select-option, .page-link, summary, [id^="close-"]');
+        // Universal Selector for any interactive element
+        const target = e.target.closest(`
+            button, 
+            a, 
+            .btn, 
+            .tab-item, 
+            .nav-link, 
+            .fab-manual, 
+            .scanner-trigger, 
+            .custom-select-option, 
+            .custom-select-trigger,
+            .page-link, 
+            summary, 
+            [role="button"],
+            .calendar-day:not(.empty),
+            .todo-item,
+            [onclick],
+            [id^="close-"],
+            #date-clear-icon,
+            #date-trigger-btn
+        `);
+
         if (target && !target.disabled && window.soundManager) {
+            // Avoid double sound if bubbling from child interactive element
+            // (e.g. button inside card)
+            // But 'closest' only picks one. 
             window.soundManager.playClick();
         }
     });

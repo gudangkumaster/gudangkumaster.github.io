@@ -254,26 +254,7 @@ const modalsHTML = `
     </div>
 </div>
 
-<!-- Category Filter Modal -->
-<div id="category-filter-modal" class="modal-overlay">
-    <div class="modal">
-        <div class="modal-header">
-            <span id="cat-modal-title">FILTER KATEGORI</span>
-            <span id="close-cat-filter-x" style="cursor:pointer">×</span>
-        </div>
-        <div class="modal-body">
-            <div class="d-flex" style="flex-wrap: wrap; gap: 10px; justify-content: center;">
-                <button class="btn btn-sm btn-3d bg-yellow w-100" data-cat="FOOD">FOOD 🍔</button>
-                <button class="btn btn-sm btn-3d bg-blue w-100" data-cat="TRANSPORT">TRANSPORT 🚗</button>
-                <button class="btn btn-sm btn-3d bg-orange w-100" data-cat="SHOPPING">SHOPPING 🛒</button>
-                <button class="btn btn-sm btn-3d bg-purple w-100" data-cat="LEISURE">LEISURE 🎬</button>
-                <button class="btn btn-sm btn-3d bg-pink w-100" data-cat="BILLS">BILLS 💡</button>
-                <button class="btn btn-sm btn-3d bg-cyan w-100" data-cat="HEALTH">HEALTH 💊</button>
-                <button class="btn btn-sm btn-3d bg-lime w-100" data-cat="INCOME">INCOME 💰</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 `;
 
 const modalsContainer = document.getElementById('modals-container');

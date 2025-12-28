@@ -10,6 +10,7 @@ class BillManager {
         this.selectedBillId = null;
         this.longPressTimer = null;
         this.collectionName = "todo";
+        this.currentRenderId = 0; // For race condition handling
         this.init();
     }
 
@@ -31,52 +32,141 @@ class BillManager {
         onSnapshot(q, (snapshot) => {
             this.bills = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             this.renderBills();
-            this.updateGlobalMarquee();
+            this.renderBillAlert();
         });
     }
 
-    updateGlobalMarquee() {
-        const marqueeEl = document.getElementById('marquee-content');
-        if (!marqueeEl) return;
+    async renderBillAlert() {
+        // Track this render request
+        const myRenderId = Date.now();
+        this.currentRenderId = myRenderId;
 
-        if (this.bills.length === 0) {
-            marqueeEl.innerText = "BELUM ADA JADWAL KEGIATAN MAUPUN TAGIHAN.";
+        const container = document.getElementById('bill-alert-container');
+        if (!container) return;
+
+        // Note: Clearing container is now handled in renderAlertUI to prevent stacking/flickering
+
+        // ---------------------------------------------------------
+        // PRIORITY 1: Urgent Bills (<= 7 days OR Overdue)
+        // ---------------------------------------------------------
+        let urgentBills = [];
+        if (this.bills && this.bills.length > 0) {
+            urgentBills = this.bills.filter(bill => {
+                const nextDate = bill.nextDueDate;
+                if (!nextDate) return false;
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const target = new Date(nextDate);
+                target.setHours(0, 0, 0, 0);
+                const diffTime = target - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= 7;
+            });
+        }
+
+        if (urgentBills.length > 0) {
+            // Sort by urgency
+            urgentBills.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+            const bill = urgentBills[0];
+            const remaining = this.getRemainingDays(bill.nextDueDate);
+            const isOverdue = remaining.includes('LALU');
+
+            // Sync check doesn't need ID check, it's instant
+            if (this.currentRenderId === myRenderId) {
+                this.renderAlertUI(container,
+                    isOverdue ? 'bg-red' : 'bg-yellow',
+                    isOverdue ? '#fff' : '#000',
+                    isOverdue ? '⚠️ TERLEWAT' : '⚠️ JATUH TEMPO SEGERA',
+                    `TAGIHAN ${bill.name} (${remaining})`,
+                    this.formatCurrency(bill.amount)
+                );
+            }
             return;
         }
 
-        // Sort by date
-        const sorted = [...this.bills].sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
-
-        const messages = sorted.map(bill => {
-            const nextDate = bill.nextDueDate;
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            const target = new Date(nextDate);
-            target.setHours(0, 0, 0, 0);
-
-            const diffTime = target - now;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            let dateInfo = "";
-            if (diffDays === 0) {
-                dateInfo = "HARI INI";
-            } else if (diffDays > 0 && diffDays <= 7) {
-                dateInfo = `AKAN JATUH TEMPO DALAM ${diffDays} HARI`;
-            } else if (diffDays < 0) {
-                dateInfo = `${Math.abs(diffDays)} HARI TERLEWAT`;
-            } else {
-                dateInfo = `PADA ${this.formatDate(nextDate)}`;
+        // ---------------------------------------------------------
+        // PRIORITY 2: Habit Warning (Spam Check)
+        // ---------------------------------------------------------
+        if (typeof window.getAllTransactions === 'function') {
+            try {
+                const txs = window.getAllTransactions();
+                if (txs && txs.length >= 3) {
+                    const last3 = txs.slice(0, 3);
+                    const firstCat = last3[0].category;
+                    // Check if category exists and is not exempt
+                    if (firstCat && firstCat !== 'INCOME' && firstCat !== 'INVEST') {
+                        const isSpam = last3.every(t => t.category === firstCat);
+                        if (isSpam) {
+                            if (this.currentRenderId === myRenderId) {
+                                this.renderAlertUI(container, 'bg-orange', '#000', '🧐 POLISI JAJAN',
+                                    `Kebanyakan ${firstCat}?`, "Jangan lupa nabung ya!");
+                            }
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Spam check failed", e);
             }
+        }
 
-            return `TAGIHAN ${bill.name} SEBESAR ${this.formatCurrency(bill.amount)} ${dateInfo}`;
-        });
+        // ---------------------------------------------------------
+        // PRIORITY 3: Bitcoin Price (REMOVED)
+        // User requested to keep it empty if P1 & P2 are not met.
+        // ---------------------------------------------------------
+        container.innerHTML = '';
+    }
 
-        marqueeEl.innerText = messages.join(" • ");
+    renderAlertUI(container, bgClass, textColor, label, title, subtitle) {
+        // ALWAYS CLEAR FIRST to prevent duplication/stacking
+        container.innerHTML = '';
+
+        const div = document.createElement('div');
+        div.className = `${bgClass}`; // Removed animate-bounceIn
+
+        // Ensure colors are applied even if CSS classes missing
+        let bgColorCode = '#fff';
+        if (bgClass === 'bg-red') bgColorCode = '#FF4D4D';
+        else if (bgClass === 'bg-yellow') bgColorCode = '#FFDE00';
+        else if (bgClass === 'bg-orange') bgColorCode = '#FF9F43';
+        else if (bgClass === 'bg-blue') bgColorCode = '#54a0ff';
+
+        // Override if using var
+        if (bgClass === 'bg-orange') bgColorCode = '#FF9F43';
+
+        div.style.cssText = `
+            background: ${bgColorCode};
+            color: ${textColor};
+            padding: 15px 20px;
+            border-bottom: 3px solid #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        `;
+
+        div.innerHTML = `
+            <div style="flex: 1;">
+                <p style="margin: 0; font-weight: 900; font-size: 0.75rem; text-transform: uppercase; opacity: 0.8;">${label}</p>
+                <p style="margin: 2px 0 0 0; font-weight: 900; font-size: 1rem;">${title}</p>
+                <p style="margin: 0; font-size: 0.8rem; font-family: 'Courier New', monospace; font-weight: bold;">${subtitle}</p>
+            </div>
+            <button id="close-alert-btn" style="background: transparent; border: none; font-size: 1.5rem; font-weight: 900; cursor: pointer; padding: 0 0 0 15px; color: ${textColor};">×</button>
+        `;
+
+        container.appendChild(div);
+
+        const closeBtn = document.getElementById('close-alert-btn');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                container.innerHTML = '';
+            };
+        }
     }
 
     setupEventListeners() {
-        // Expose marquee update globally just in case
-        window.updateTodoMarquee = () => this.updateGlobalMarquee();
+        // Expose alert update globally just in case
+        window.updateBillAlert = () => this.renderBillAlert();
         setInterval(() => {
             const saveBtn = document.getElementById('save-bill-btn');
             const closeBtn = document.getElementById('close-bill-x');

@@ -21,6 +21,14 @@ export function initScanner() {
     if (scanBtn) {
         scanBtn.addEventListener('click', () => {
             if (window.soundManager) window.soundManager.playClick();
+
+            // Enforce API Key Check
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) {
+                showModal("API KEY REQUIRED", "Silakan masukkan Gemini API Key di menu Settings untuk menggunakan fitur scan.");
+                return;
+            }
+
             scanOptionsModal.classList.add('active');
         });
     }

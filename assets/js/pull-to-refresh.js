@@ -62,10 +62,21 @@ class PullToRefresh {
         if (pullDistance > 0 && window.scrollY === 0) {
             e.preventDefault();
 
-            if (pullDistance >= this.threshold) {
+            // Resistance Effect
+            const resistance = 0.5;
+            const resistedDistance = pullDistance * resistance;
+
+            // Visual feedback based on distance
+            if (pullDistance >= this.threshold * 2) {
+                this.container.classList.add('over-pull');
+                this.updateText('WOAH! SANTAI BOSS!');
+                this.container.classList.add('pulling');
+            } else if (pullDistance >= this.threshold) {
+                this.container.classList.remove('over-pull');
                 this.container.classList.add('pulling');
                 this.updateText('LEPAS UNTUK REFRESH');
             } else {
+                this.container.classList.remove('over-pull');
                 this.container.classList.remove('pulling');
                 this.updateText('TARIK UNTUK REFRESH');
             }

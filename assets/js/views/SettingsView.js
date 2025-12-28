@@ -18,7 +18,7 @@ const settingsHTML = `
                     Required for Receipt Scanner.</p>
                 <div class="form-group mb-2" style="position: relative;">
                     <input type="password" id="input-gemini-key" class="form-control" placeholder="Paste your API Key here..."
-                        style="border: 3px solid #000; font-family: monospace; letter-spacing: 1px; padding-right: 40px; box-shadow: none;">
+                        style="border: 3px solid #000; font-family: monospace; letter-spacing: 1px; padding-right: 40px; box-shadow: none; font-size: 0.85rem;">
                     <span id="toggle-key-vis" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; opacity: 0.7;">
                         👁️
                     </span>
@@ -192,6 +192,15 @@ const settingsHTML = `
                  <p style="margin: 0 0 15px 0; font-size: 0.85rem; opacity: 0.8; font-weight: bold; line-height: 1.4;">
                         Customize which sections to show on the home page.
                  </p>
+
+                 <!-- Jumbotron Alert -->
+                 <div class="nb-flex-between mb-3">
+                    <span style="font-weight: 900;">SMART ALERT</span>
+                    <label class="toggle-switch" style="scale: 0.8; margin: 0;">
+                        <input type="checkbox" id="toggle-section-jumbotron" onchange="window.toggleHomeSection('jumbotron', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                 </div>
                  
                  <!-- Stat Carousel -->
                  <div class="nb-flex-between mb-3">

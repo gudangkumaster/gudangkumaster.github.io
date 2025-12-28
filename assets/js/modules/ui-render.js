@@ -152,12 +152,13 @@ export function clearTransactionList() {
     if (transactionList) transactionList.innerHTML = '';
 }
 
-export function renderTransactionItem(item) {
+export function renderTransactionItem(item, index = 0) {
     if (!transactionList) return;
 
     const div = document.createElement('div');
     const type = (item.cat === 'INVEST' || item.cat === 'BITCOIN') ? 'invest' : (item.cat === 'INCOME' ? 'income' : 'expense');
-    div.className = `card mb-2 animate-bounceIn transaction-item`;
+    div.className = `card mb-2 animate-stagger transaction-item`;
+    div.style.animationDelay = `${index * 100}ms`; // Stagger Delay
     div.setAttribute('data-type', type);
 
     const textClass = type === 'income' ? 'income-text' : (type === 'invest' ? 'invest-text' : 'expense-text');
@@ -198,15 +199,17 @@ export function renderTransactionItem(item) {
     const categoryDisplay = isInvest ? 'INVEST' : item.cat;
 
     div.innerHTML = `
-        <div class="card-body p-2 nb-flex-between" style="align-items: flex-start;">
+        <div class="card-body p-2 nb-flex-between" style="align-items: center;">
             <div style="flex: 1; min-width: 0; padding-right: 10px;">
-                <p class="m-0 text-bold" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.desc}</p>
+                <p class="m-0 text-bold" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px !important;">${item.desc}</p>
                 <div class="nb-flex" style="gap: 8px; align-items: center; flex-wrap: wrap;">
                     <span class="category-tag ${item.bg}" style="font-size: 0.85rem;">${categoryIcon} ${categoryDisplay}</span>
-                    <span class="text-bold" style="font-size: 0.75rem; color: #666;">${dateStr}</span>
                 </div>
             </div>
-            <p class="m-0 ${textClass} text-bold text-right" style="min-width: 100px; flex-shrink: 0; font-size: 1.1rem;">${displayAmount}</p>
+            <div class="text-right" style="min-width: 100px; flex-shrink: 0;">
+                <p class="m-0 ${textClass} text-bold" style="font-size: 1.1rem;">${displayAmount}</p>
+                <span class="text-bold" style="font-size: 0.75rem; color: #666;">${dateStr}</span>
+            </div>
         </div>
     `;
 
@@ -228,6 +231,24 @@ export function renderTransactionItem(item) {
     });
 
     transactionList.appendChild(div);
+}
+
+export function renderEmptyState() {
+    if (!transactionList) return;
+
+    transactionList.innerHTML = `
+        <div class="empty-state-container" style="text-align: center; padding: 40px 20px; opacity: 0.6;">
+            <div style="font-size: 4rem; margin-bottom: 10px; animation: floatGhost 3s ease-in-out infinite;">👻</div>
+            <h3 style="text-transform: uppercase; font-weight: 900; margin-bottom: 5px;">ZONK!</h3>
+            <p style="font-weight: bold;">Belum ada data transaksi.</p>
+        </div>
+        <style>
+            @keyframes floatGhost {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+        </style>
+    `;
 }
 
 export function renderPaginationControls(currentPage, hasNext, onPrev, onNext) {

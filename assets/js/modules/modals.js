@@ -109,40 +109,45 @@ export function showModal(title, message) {
     document.body.classList.add('modal-open');
     if (window.pausePTR) window.pausePTR();
 
-    // Play alert sound based on title
+    // Determine Type for Sound & Styling
+    const titleLower = title.toLowerCase();
+    const isError = titleLower.includes('error') || titleLower.includes('gagal');
+
+    // Sound
     if (window.soundManager) {
-        const titleLower = title.toLowerCase();
-        if (titleLower.includes('berhasil') || titleLower.includes('success') || titleLower.includes('info')) {
-            window.soundManager.playSuccess();
-
-            // Auto-Close Progress Bar Animation
-            const progressBar = document.getElementById('modal-progress-bar');
-            if (progressBar) {
-                progressBar.style.transition = 'none';
-                progressBar.style.width = '100%';
-                void progressBar.offsetWidth;
-                progressBar.style.transition = 'width 2s linear';
-                progressBar.style.width = '0%';
-            }
-
-            // Auto-Close
-            setTimeout(() => {
-                const currentModal = getEl('nb-custom-modal');
-                if (currentModal && currentModal.classList.contains('active')) {
-                    const currentTitle = getEl('modal-title').innerText;
-                    if (currentTitle === title) hideModal();
-                }
-            }, 2200);
-        } else if (titleLower.includes('error') || titleLower.includes('gagal')) {
-            window.soundManager.playError();
-            const progressBar = document.getElementById('modal-progress-bar');
-            if (progressBar) progressBar.style.width = '0%';
-        } else {
-            window.soundManager.playSuccess();
-            const progressBar = document.getElementById('modal-progress-bar');
-            if (progressBar) progressBar.style.width = '0%';
-        }
+        if (isError) window.soundManager.playError();
+        else window.soundManager.playSuccess();
     }
+
+    // Calculate Duration based on text length
+    // Base 2200ms + 50ms per char. Max 6000ms.
+    const baseDuration = 2200;
+    const charDuration = 50;
+    const calculatedDuration = Math.min(6000, baseDuration + (message.length * charDuration));
+
+    // Progress Bar Animation (Run for ALL single-option modals)
+    const progressBar = document.getElementById('modal-progress-bar');
+    if (progressBar) {
+        // Reset
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '100%';
+        progressBar.style.backgroundColor = isError ? '#FF4D4D' : '#000'; // Red for error, Black for others
+        void progressBar.offsetWidth; // Trigger Reflow
+
+        // Animate
+        progressBar.style.transition = `width ${calculatedDuration}ms linear`;
+        progressBar.style.width = '0%';
+    }
+
+    // Auto-Close Logic (For ALL)
+    setTimeout(() => {
+        const currentModal = getEl('nb-custom-modal');
+        if (currentModal && currentModal.classList.contains('active')) {
+            const currentTitle = getEl('modal-title').innerText;
+            // Only close if it's still the same modal (title check is a decent proxy)
+            if (currentTitle === title) hideModal();
+        }
+    }, calculatedDuration);
 }
 
 export function hideModal() {
@@ -305,22 +310,4 @@ function hideUndoToast() {
     }
 }
 
-// --- Category Filter Logic ---
-export function showCategoryFilterModal() {
-    const modal = getEl('category-filter-modal');
-    if (modal) {
-        modal.classList.add('active');
-        document.body.classList.add('modal-open');
-        if (window.pausePTR) window.pausePTR();
-        if (window.soundManager) window.soundManager.playClick();
-    }
-}
 
-export function hideCategoryFilterModal() {
-    const modal = getEl('category-filter-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.classList.remove('modal-open');
-        if (window.resumePTR) window.resumePTR();
-    }
-}

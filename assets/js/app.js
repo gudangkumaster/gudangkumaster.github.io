@@ -3,11 +3,15 @@
  * Modular Architecture
  */
 
-import { initModals, showModal, showConfirm, hideManualModal, showCategoryFilterModal, hideCategoryFilterModal } from "./modules/modals.js";
-import { initUI, showLoadingState, updateDashboard, updateBudgetUI, clearTransactionList, renderTransactionItem, closeContextMenu, renderPaginationControls, renderAnalytics } from "./modules/ui-render.js";
+import { initModals, showModal, showConfirm, hideManualModal } from "./modules/modals.js";
+import { initUI, showLoadingState, updateDashboard, updateBudgetUI, clearTransactionList, renderTransactionItem, renderEmptyState, closeContextMenu, renderPaginationControls, renderAnalytics } from "./modules/ui-render.js";
 import { initTransactionService, addTransaction, updateTransaction, deleteTransaction } from "./modules/transaction-service.js";
 import { initScanner } from "./modules/scanner.js";
+import { validateGeminiApiKey } from "./api.js";
 import "./modules/calendar-manager.js";
+
+// Make API Validator available globally for settings.js
+window.validateGeminiApiKey = validateGeminiApiKey;
 
 // --- Pull To Refresh Setup (Global Wrappers for SPA) ---
 window.currentPTR = null;
@@ -224,7 +228,14 @@ async function initApp() {
 
 
         // Update local state and render
+        // Update local state and render
         allTransactions = data.allTransactions;
+        // Expose for Smart Alerts
+        window.getAllTransactions = () => allTransactions;
+
+        // Trigger Smart Alert Update (Spam Check needs fresh transactions)
+        if (window.updateBillAlert) window.updateBillAlert();
+
         applyFiltersAndRender(true); // true = reset to page 1
     });
 }
@@ -254,29 +265,70 @@ function setupFilterListeners() {
     }
 
     // Category Tabs Listener
+    // Category Tabs Listener
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const type = tab.getAttribute('data-filter');
 
-            if (type === 'CATEGORY') {
-                showCategoryFilterModal();
-            } else {
-                // Normal tabs
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
+            // Skip if it's the dropdown trigger (handled by setupCustomDropdown)
+            if (!type) return;
 
-                // Reset category filter if switching to main tabs
-                filterConfig.type = type;
-                filterConfig.category = null;
+            // Normal tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            // Remove active from dropdown trigger too
+            const dropTrigger = document.getElementById('filter-cat-select-trigger');
+            if (dropTrigger) dropTrigger.classList.remove('active-tab'); // Use special class to avoid conflict with 'active' dropdown state
 
-                // Reset Category Tab text
-                document.getElementById('tab-category').innerText = 'CATEGORY';
-                document.getElementById('tab-category').classList.remove('active');
+            tab.classList.add('active');
 
-                applyFiltersAndRender(true);
-            }
+            // Reset category filter if switching to main tabs
+            filterConfig.type = type;
+            filterConfig.category = null;
+
+            // Update dropdown UI back to default
+            if (window.updateCustomDropdownUI) window.updateCustomDropdownUI('filter-cat', 'RESET');
+            const catText = document.getElementById('filter-cat-selected-text');
+            if (catText) catText.innerText = 'CATEGORY';
+
+            applyFiltersAndRender(true);
         });
     });
+
+    // Init Dropdown
+    if (window.setupCustomDropdown) window.setupCustomDropdown('filter-cat');
+
+    // Category Dropdown Change Listener
+    const inputFilterCat = document.getElementById('input-filter-cat');
+    if (inputFilterCat) {
+        inputFilterCat.addEventListener('change', (e) => {
+            const cat = e.target.value;
+            const dropTrigger = document.getElementById('filter-cat-select-trigger');
+
+            // Reset other tabs
+            tabs.forEach(t => t.classList.remove('active'));
+
+            if (cat === 'RESET') {
+                filterConfig.type = 'all';
+                filterConfig.category = null;
+
+                if (dropTrigger) dropTrigger.classList.remove('active-tab');
+                // Default to ALL
+                document.querySelector('[data-filter="all"]').classList.add('active');
+
+                // Reset text
+                const catText = document.getElementById('filter-cat-selected-text');
+                if (catText) catText.innerText = 'CATEGORY';
+            } else {
+                filterConfig.type = 'category';
+                filterConfig.category = cat;
+
+                if (dropTrigger) dropTrigger.classList.add('active-tab');
+                // The text is auto-updated by setupCustomDropdown logic
+            }
+
+            applyFiltersAndRender(true);
+        });
+    }
 
     // Category Modal Options Listener
     const catModalBtns = document.querySelectorAll('#category-filter-modal button[data-cat]');
@@ -371,9 +423,9 @@ function applyFiltersAndRender(resetPage = false) {
     // 3. Render Items
     clearTransactionList();
     if (pageItems.length === 0) {
-        // Optional: Render 'No Result' message
+        renderEmptyState();
     } else {
-        pageItems.forEach(item => renderTransactionItem(item));
+        pageItems.forEach((item, index) => renderTransactionItem(item, index));
     }
 
     // 4. Render Pagination

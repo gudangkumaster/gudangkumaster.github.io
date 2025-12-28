@@ -258,3 +258,27 @@ Rules:
         throw err;
     }
 }
+
+// Validate API Key
+export async function validateGeminiApiKey(apiKey) {
+    if (!apiKey) return { valid: false, message: "API Key kosong" };
+
+    try {
+        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+        const response = await fetch(testUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: "test" }] }]
+            })
+        });
+
+        if (response.ok) {
+            return { valid: true };
+        } else {
+            return { valid: false, status: response.status };
+        }
+    } catch (e) {
+        return { valid: false, message: e.message };
+    }
+}

@@ -91,16 +91,61 @@ window.initSettings = function () {
             }
         });
 
-        saveKeyBtn.onclick = () => {
+        saveKeyBtn.onclick = async () => {
             const val = apiKeyInput.value.trim();
             if (val) {
-                localStorage.setItem('gemini_api_key', val);
-                if (window.showAppModal) {
-                    window.showAppModal("SIMPAN BERHASIL", "API Key berhasil disimpan! Scanner siap digunakan.");
-                } else {
-                    alert('API Key Saved!');
+                // Check if same as stored
+                const currentStored = localStorage.getItem('gemini_api_key');
+                if (val === currentStored) {
+                    if (window.showAppModal) {
+                        window.showAppModal("INFO", "API Key tidak berubah.");
+                    } else {
+                        alert("API Key Unchanged");
+                    }
+                    if (window.soundManager) window.soundManager.playClick();
+                    return;
                 }
-                if (window.soundManager) window.soundManager.playSuccess();
+
+                // Show Validating State
+                const originalText = saveKeyBtn.innerText;
+                saveKeyBtn.innerText = "VALIDATING...";
+                saveKeyBtn.disabled = true;
+
+                try {
+                    if (window.validateGeminiApiKey) {
+                        const result = await window.validateGeminiApiKey(val);
+                        if (result.valid) {
+                            localStorage.setItem('gemini_api_key', val);
+                            if (window.showAppModal) {
+                                window.showAppModal("SIMPAN BERHASIL", "API Key valid dan berhasil disimpan! Scanner siap digunakan.");
+                            } else {
+                                alert('API Key Validation Success & Saved!');
+                            }
+                            if (window.soundManager) window.soundManager.playSuccess();
+                        } else {
+                            if (window.soundManager) window.soundManager.playError();
+                            if (window.showAppModal) {
+                                let msg = "API Key tidak valid.";
+                                if (result.status === 403) msg = "Akses Ditolak (403). Pastikan API Key benar dan aktif.";
+                                else if (result.status === 400) msg = "Format API Key salah (400).";
+                                window.showAppModal("GAGAL MENYIMPAN", msg);
+                            } else {
+                                alert('Invalid API Key: ' + (result.status || 'Unknown Error'));
+                            }
+                        }
+                    } else {
+                        // Fallback if app.js not fully loaded
+                        console.warn("Validator not ready, saving anyway.");
+                        localStorage.setItem('gemini_api_key', val);
+                        alert("Saved (Validation Unavailable)");
+                    }
+                } catch (e) {
+                    console.error("Validation Error", e);
+                    alert("Validation Error");
+                } finally {
+                    saveKeyBtn.innerText = originalText;
+                    saveKeyBtn.disabled = false;
+                }
             } else {
                 localStorage.removeItem('gemini_api_key');
                 if (window.showAppModal) {
@@ -254,7 +299,8 @@ const DEFAULT_HOME_CONFIG = {
     stats: true,
     recent: true,
     budget: true,
-    analytics: true
+    analytics: true,
+    jumbotron: true
 };
 
 function getHomeConfig() {
@@ -285,7 +331,8 @@ window.applyHomeSettings = function () {
         stats: 'section-stats',
         recent: 'section-recent',
         budget: 'section-budget',
-        analytics: 'section-analytics'
+        analytics: 'section-analytics',
+        jumbotron: 'bill-alert-container'
     };
 
     Object.keys(map).forEach(key => {
@@ -307,7 +354,8 @@ window.initHomeSettingsUI = function () {
         stats: 'toggle-section-stats',
         recent: 'toggle-section-recent',
         budget: 'toggle-section-budget',
-        analytics: 'toggle-section-analytics'
+        analytics: 'toggle-section-analytics',
+        jumbotron: 'toggle-section-jumbotron'
     };
 
     Object.keys(map).forEach(key => {

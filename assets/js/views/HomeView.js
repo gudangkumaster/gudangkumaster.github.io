@@ -89,7 +89,26 @@ const homeHTML = `
             <div class="tab-item active" data-filter="all">ALL</div>
             <div class="tab-item" data-filter="INCOME">INCOME</div>
             <div class="tab-item" data-filter="EXPENSE">EXPENSE</div>
-            <div class="tab-item" data-filter="CATEGORY" id="tab-category">CATEGORY</div>
+            
+            <!-- Inline Dropdown for Category Filter -->
+            <div class="custom-select-wrapper" style="flex: 1; min-width: 130px; margin-left: 5px;">
+                <div class="custom-select-trigger tab-item" id="filter-cat-select-trigger" style="justify-content: space-between; width: 100%; margin: 0; padding: 10px 5px; box-shadow: none !important; font-size: 0.7rem;">
+                    <span id="filter-cat-selected-text" style="flex: 1; text-align: center;">CATEGORY</span>
+                    <span class="custom-select-arrow">▼</span>
+                </div>
+                <!-- Dropdown Options (Styled to pop over) -->
+                <div class="custom-select-options text-left" id="filter-cat-select-options" style="margin-top: 5px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; min-width: 180px; right: 0; left: auto; overflow-x: hidden;">
+                    <div class="custom-select-option" data-value="FOOD">🍔 FOOD</div>
+                    <div class="custom-select-option" data-value="TRANSPORT">🚗 TRANSPORT</div>
+                    <div class="custom-select-option" data-value="SHOPPING">🛒 SHOPPING</div>
+                    <div class="custom-select-option" data-value="LEISURE">🎬 LEISURE</div>
+                    <div class="custom-select-option" data-value="BILLS">💡 BILLS</div>
+                    <div class="custom-select-option" data-value="HEALTH">💊 HEALTH</div>
+                    <div class="custom-select-option" data-value="EDUCATION">🎓 EDUCATION</div>
+                    <div class="custom-select-option" data-value="INCOME">💰 INCOME</div>
+                </div>
+                <input type="hidden" id="input-filter-cat">
+            </div>
         </div>
 
         <div id="transaction-list" class="mt-2">

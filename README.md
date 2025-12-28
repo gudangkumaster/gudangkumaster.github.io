@@ -1,57 +1,63 @@
-# 💰 NEO-FIN: BRUTALISM TRACKER
+# 💰 GUDANGDUIT: NEO-BRUTALISM FINANCE
 
-> **"FINANCE APP BUT MAKE IT RAW."**
+> **"Financial Tracking, But Make It Raw & Interactive."**
 
 ![Status](https://img.shields.io/badge/STYLE-NEOBRUTALISM-black?style=for-the-badge&logo=css3&logoColor=white)
 ![Status](https://img.shields.io/badge/AI-GEMINI_FLASH-FFDE00?style=for-the-badge&logo=google&logoColor=black)
-![Status](https://img.shields.io/badge/VIBE-LOFI_CHILL-FF90E8?style=for-the-badge&logo=apple-music&logoColor=black)
+![Status](https://img.shields.io/badge/INTERACTION-HAPTIC_&_SOUND-FF4D4D?style=for-the-badge&logo=rss&logoColor=white)
 
 ---
 
 ## 🚧 WHAT IS THIS?
 
-This isn't your boring, corporate blue finance tracker. This is **NEO-FIN**. 
-It uses **hard shadows**, **bold borders**, and **high-contrast colors** to force you to look at your spending habits. 
+**GudangDuit** adalah aplikasi pencatat keuangan dengan gaya **Neo-Brutalism**.
+Tanpa gradien halus, tanpa shadow lembut. Semuanya **TEBAL, KONTRAS, dan JUJUR**.
 
-Built with **Vanilla JS** because frameworks are for people who like loading spinners.
+Dibangun dengan **Vanilla JS** murni untuk performa maksimal, terintegrasi dengan **Firebase Firestore** untuk data realtime, dan **Google Gemini AI** untuk scan struk otomatis.
 
 ---
 
-## 🔥 KILLER FEATURES
+## 🔥 NEW INTERACTIVE FEATURES
 
-### 🤖 Gemini AI Receipt Scanner
-Stop typing manually. Snap a photo of your receipt, and our integrated **Google Gemini 1.5 Flash** model extracts:
-- Items list
-- Total price
-- Date & Merchant
-*...all in seconds.*
+### 1. 🚨 Smart Contextual Alert (Jumbotron)
+Alert pintar di halaman utama yang **hanya muncul jika penting**. Tidak ada spam.
+**Logika Prioritas:**
+1.  🔴 **URGENT BILLS**: Jika ada tagihan H-7 atau Terlewat → *Background Merah/Kuning.*
+2.  🟠 **SPAM WARNING**: Jika Anda jajan kategori yang sama 3x berturut-turut → *"Polisi Jajan" menegur Anda.*
+3.  ⚪ **EMPTY STATE**: Jika aman, alert menghilang (bersih).
 
-### 🎵 Chill Mode (BGM)
-Focus on your finances with built-in **Lofi Beats**. 
-- Random shuffle logic
-- Persistence across reloads
-- Toggle in Settings (because consent matters)
+> **Customization:** Bisa dimatikan total via **Settings > Home Appearance**.
 
-### 📊 Brutal Analytics
-- **Dynamic Charts**: Visualise your financial ruin (or success).
-- **In-Your-Face Budgeting**: Progress bars that judge you when you hit 90%.
+### 2. ⬇️ Physics-Based Pull-To-Refresh
+Bukan sekadar icon muter. Rasakan interaksinya:
+- **Push Down**: Menarik layar akan **mendorong** seluruh konten ke bawah (bukan menimpa).
+- **Over-Pull Warning**: Tarik terlalu kencang? Background jadi **MERAH** dengan pesan **"WOAH! SANTAI BOSS!"** 🛑
+- **Haptic Feedback**: Getaran halus saat refresh berhasil.
 
-### ⚡ Performance Features
-- **PWA Ready**: Works offline-ish.
-- **Nuclear PTR**: Custom Pull-To-Refresh logic that actually behaves.
-- **Smart Caching**: Cache API integration for heavy assets (audio/models).
+### 3. 🤖 Gemini AI Scanner (Secure)
+Scan struk belanjaan Anda, AI akan otomatis:
+- Mendeteksi Nama Merchant (PT/CV).
+- Mendeteksi Total Harga.
+- Menentukan Kategori (FOOD, TRANSPORT, dll).
+> **Security:** API Key disimpan lokal di browser Anda. Sekarang input terproteksi (masking) dan bisa dihapus kapan saja.
+
+### 4. 🔊 Sound Packs & Lofi Mode
+Bosan sunyi? Nyalakan **Sound Effects** di Settings.
+- **Click Sounds**: Classic, Pop, Bubble, Retro.
+- **Alert Sounds**: Success, Chaching (Duit!), Hi Dog.
+- **Lofi BGM**: Musik latar santai agar tidak stres melihat pengeluaran.
 
 ---
 
 ## 🛠️ TECH STACK
 
-| COMPONENT | TECH | WHY? |
+| COMPONENT | TECH | NOTE |
 |-----------|------|------|
-| **Core** | HTML5 / CSS3 | Raw power. No compilation. |
-| **Logic** | Vanilla JS (ES6+) | Blazing fast DOM manipulation. |
+| **Core** | HTML5 / CSS3 | Raw power. No framework overhead. |
+| **Logic** | Vanilla JS (ES6+) | Modular architecture (MVC-ish). |
 | **Backend** | Firebase Firestore | Realtime database syncing. |
-| **AI** | Google Gemini API | Multimodal vision & reasoning. |
-| **Design** | Hand-coded CSS | Neobrutalism requires soul. |
+| **AI** | Google Gemini 1.5 | Multimodal vision & reasoning. |
+| **style** | Neo-Brutalism | 3px Borders. Hard Shadows. Bold Type. |
 
 ---
 
@@ -59,41 +65,40 @@ Focus on your finances with built-in **Lofi Beats**.
 
 Our design philosophy is simple:
 1.  **Borders**: `3px solid black`. Always.
-2.  **Shadows**: `8px 8px 0px 0px`. Hard. Default.
+2.  **Shadows**: `Hard Offset`. No blurs.
 3.  **Colors**:
     -   🟨 `#FFDE00` (Warning/Main)
-    -   🟦 `#23A6F0` (Primary)
-    -   🟥 `#FF4D4D` (Danger)
-    -   🟩 `#00F0B5` (Success)
-    -   👿 `#A388EE` (Purple Accents)
+    -   🟦 `#23A6F0` (Info)
+    -   🟥 `#FF4D4D` (Urgent/Danger)
+    -   🟧 `#FF9F43` (Alert/Spam)
+    -   🟣 `#A388EE` (Accents)
 
 ---
 
-## 🚀 HOW TO RUN
+## 🚀 CARA PAKAI (LOCAL)
 
-1.  **Clone it**:
+1.  **Clone Repo**:
     ```bash
-    git clone https://github.com/nadya/neofin-brutal.git
+    git clone https://github.com/nadya/gudangduit-neo.git
     ```
-2.  **Open it**:
-    Just open `index.html` in your browser. Or serve it:
+2.  **Serve It (Wajib pakai Server)**:
+    Karena kebijakan CORS ES6 Modules, jangan buka file langsung.
     ```bash
     npx serve .
     ```
-3.  **Configure API**:
-    Make sure `api.js` has your Firebase config. (It's hidden, don't steal it).
+3.  **Setup API Key**:
+    - Buka menu **Settings**.
+    - Masukkan **Gemini API Key** Anda untuk fitur Scanner.
+    - (Firebase Config sudah tertanam di `api.js`, ganti jika punya project sendiri).
 
 ---
 
-## 🛡️ "NUCLEAR OPTION" PTR
+## 🛡️ "NUCLEAR" PTR LOGIC
 
-We solved the infamous Pull-To-Refresh vs Modal conflict by implementing a **Nuclear Lifecycle**:
-- **Modal Open** = `pausePTR()` (Destroys the library instance).
-- **Modal Close** = `resumePTR()` (Reincarnates the library).
-
-*Scroll safely, friends.*
+Kami mengatasi konflik antara **Pull-To-Refresh** vs **Modal** dengan "Nuclear Lifecycle":
+- **Modal Open** = `pausePTR()` (Mematikan fungsi refresh agar tidak scroll tidak sengaja).
+- **Modal Close** = `resumePTR()` (Menghidupkan kembali fungsi refresh).
 
 ---
 
-**Made with 💻 and ☕ by Gudangku Team.**
-
+**Made with 💻, ☕, and 3px Borders.**

@@ -104,14 +104,49 @@
     cursor: default;
 }
 
-#budget-progress-container:hover {
-    box-shadow: var(--nb-shadow-inner) !important;
+/* Fix: Disable hover effects specifically for budget tracker */
+/* 1. Container Rules */
+#budget-progress-container:hover,
+#budget-progress-container:active,
+#budget-progress-container:focus {
+    box-shadow: none !important;
+    transform: none !important;
+    cursor: default !important;
+    border: 3px solid #000 !important;
+    /* Keep border stable */
+    transition: none !important;
+}
+
+/* 2. Children Rules (Do NOT force border) */
+#budget-progress-container *:hover,
+#budget-progress-container *:active,
+#budget-progress-container *:focus {
+    box-shadow: none !important;
+    transform: none !important;
+    cursor: default !important;
+    transition: none !important;
+    outline: none !important;
+    border: none !important;
+    /* Ensure no borders appear on text/spans */
+}
+
+/* 3. Pointer Events & Selection */
+#budget-progress-container .progress,
+#budget-progress-container .progress-bar {
+    pointer-events: none;
+}
+
+#budget-progress-container span {
+    user-select: none;
+    /* Prevent text selection/highlight */
 }
 
 /* Ensure transaction items still have hover */
-.transaction-item:hover {
+/* Ensure transaction items still have hover */
+.transaction-item:hover,
+.transaction-item:focus-within {
     transform: translate(-4px, -4px) !important;
-    box-shadow: 12px 12px 0px 0px var(--nb-black) !important;
+    box-shadow: none !important;
 }
 
 /* Color Utility Classes */
@@ -570,6 +605,119 @@
 .calendar-day.empty {
     border: none;
     background: transparent;
-    pointer-events: none;
     box-shadow: none;
+}
+
+/* Active Tab Style for Custom Dropdown Trigger */
+.custom-select-trigger.active-tab {
+    background: #000 !important;
+    color: #fff !important;
+}
+
+.custom-select-trigger.active-tab .custom-select-arrow {
+    color: #fff !important;
+}
+
+/* --- MICRO INTERACTIONS --- */
+
+/* 1. Input Pop Effect */
+.form-control:focus {
+    background-color: #fff9db;
+    box-shadow: 7px 7px 0px 0px var(--nb-black);
+    transform: translate(-2px, -2px) scale(1.01);
+    border-color: var(--nb-black);
+}
+
+/* 2. Custom Scrollbar (Neobrutalism) */
+::-webkit-scrollbar {
+    width: 14px;
+    /* Thick for brut style */
+    height: 14px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--nb-white);
+    border-left: 3px solid var(--nb-black);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--nb-yellow);
+    border: 3px solid var(--nb-black);
+    box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--nb-pink);
+    border-color: var(--nb-black);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--nb-black);
+}
+
+/* 3. Staggered List Animation */
+@keyframes slideInStagger {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-stagger {
+    animation: slideInStagger 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* 4. Missing Utility for Alert */
+.bg-red {
+    background-color: #FF4D4D !important;
+}
+
+.bg-blue {
+    background-color: #54a0ff !important;
+}
+
+.bg-orange {
+    background-color: #FF9F43 !important;
+}
+
+/* 5. Bounce In Animation for Alerts */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+
+    70% {
+        transform: scale(0.9);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.animate-bounceIn {
+    animation: bounceIn 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+/* Fix Category Dropdown Border Thickness */
+.tab-item,
+.custom-select-trigger {
+    border: 3px solid #000 !important;
+}
+
+/* Ensure the dropdown options also match */
+.custom-select-options {
+    border: 3px solid #000 !important;
+    box-shadow: 4px 4px 0 #000 !important;
 }

@@ -89,6 +89,7 @@ const homeHTML = `
             <div class="tab-item active" data-filter="all">ALL</div>
             <div class="tab-item" data-filter="INCOME">INCOME</div>
             <div class="tab-item" data-filter="EXPENSE">EXPENSE</div>
+            <div class="tab-item" data-filter="CATEGORY" id="tab-category">CATEGORY</div>
         </div>
 
         <div id="transaction-list" class="mt-2">

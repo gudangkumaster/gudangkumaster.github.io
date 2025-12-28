@@ -3,7 +3,7 @@
  * Modular Architecture
  */
 
-import { initModals, showModal, showConfirm, hideManualModal } from "./modules/modals.js";
+import { initModals, showModal, showConfirm, hideManualModal, showCategoryFilterModal, hideCategoryFilterModal } from "./modules/modals.js";
 import { initUI, showLoadingState, updateDashboard, updateBudgetUI, clearTransactionList, renderTransactionItem, closeContextMenu, renderPaginationControls, renderAnalytics } from "./modules/ui-render.js";
 import { initTransactionService, addTransaction, updateTransaction, deleteTransaction } from "./modules/transaction-service.js";
 import { initScanner } from "./modules/scanner.js";
@@ -93,6 +93,7 @@ let filteredTransactions = [];
 const filterConfig = {
     search: '',
     type: 'all',
+    category: null,
     date: ''
 };
 const paginationConfig = {
@@ -162,6 +163,45 @@ async function initApp() {
     // 6. Initialize PTR
     if (window.initHomePTR) window.initHomePTR();
 
+    // 7. Global Keyboard Shortcuts (Esc to Close, Enter to Save)
+    document.addEventListener('keydown', (e) => {
+        // Esc to Close
+        if (e.key === 'Escape') {
+            const activeModal = document.querySelector('.nb-modal.active');
+            if (activeModal) {
+                if (activeModal.id === 'manual-modal') hideManualModal();
+                else if (activeModal.id === 'nb-custom-modal') hideModal();
+                else {
+                    activeModal.classList.remove('active');
+                    document.body.classList.remove('modal-open');
+                    if (window.resumePTR) window.resumePTR();
+                }
+            }
+        }
+
+        // Enter to Save / OK
+        if (e.key === 'Enter') {
+            const manualModal = document.getElementById('manual-modal');
+            const customModal = document.getElementById('nb-custom-modal');
+
+            // 1. Manual Form Save
+            if (manualModal && manualModal.classList.contains('active')) {
+                const activeEl = document.activeElement;
+                if (activeEl.id === 'input-amount' || activeEl.id === 'input-desc') {
+                    e.preventDefault();
+                    const saveBtn = document.getElementById('save-manual-btn');
+                    if (saveBtn) saveBtn.click();
+                }
+            }
+            // 2. Generic Modal OK
+            else if (customModal && customModal.classList.contains('active')) {
+                e.preventDefault();
+                const okBtn = document.getElementById('modal-ok-btn');
+                if (okBtn) okBtn.click();
+            }
+        }
+    });
+
     // 7. Init Scanner
     initScanner();
 
@@ -216,11 +256,44 @@ function setupFilterListeners() {
     // Category Tabs Listener
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
             const type = tab.getAttribute('data-filter');
-            filterConfig.type = type; // 'all', 'INCOME', 'EXPENSE'
+
+            if (type === 'CATEGORY') {
+                showCategoryFilterModal();
+            } else {
+                // Normal tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Reset category filter if switching to main tabs
+                filterConfig.type = type;
+                filterConfig.category = null;
+
+                // Reset Category Tab text
+                document.getElementById('tab-category').innerText = 'CATEGORY';
+                document.getElementById('tab-category').classList.remove('active');
+
+                applyFiltersAndRender(true);
+            }
+        });
+    });
+
+    // Category Modal Options Listener
+    const catModalBtns = document.querySelectorAll('#category-filter-modal button[data-cat]');
+    catModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cat = btn.getAttribute('data-cat');
+
+            // Highlight Tab
+            tabs.forEach(t => t.classList.remove('active'));
+            const catTab = document.getElementById('tab-category');
+            catTab.classList.add('active');
+
+            filterConfig.type = 'category';
+            filterConfig.category = cat;
+            catTab.innerText = cat; // Show selected category name
+
+            hideCategoryFilterModal();
             applyFiltersAndRender(true);
         });
     });
@@ -262,6 +335,12 @@ function applyFiltersAndRender(resetPage = false) {
 
             else if (filterConfig.type === 'EXPENSE') {
                 matchType = !isIncome && !isInvest;
+            }
+
+            // New Category Filter
+            else if (filterConfig.type === 'category' && filterConfig.category) {
+                // Strict match for category
+                matchType = item.cat === filterConfig.category;
             }
         }
 
@@ -345,6 +424,41 @@ function setupManualInput() {
     }
 
     if (saveManualBtn) {
+        // Enter Key Listener for Inputs
+        const inputs = [document.getElementById('input-amount'), document.getElementById('input-desc')];
+        inputs.forEach(input => {
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveManualBtn.click();
+                    }
+                });
+            }
+        });
+
+        // Auto-Format Currency Listener (Amount)
+        const amountInput = document.getElementById('input-amount');
+        if (amountInput) {
+            amountInput.addEventListener('input', (e) => {
+                // Remove non-digits
+                let val = e.target.value.replace(/\D/g, '');
+                if (val) {
+                    // Add dots
+                    val = parseInt(val).toLocaleString('id-ID');
+                    e.target.value = val;
+                }
+            });
+        }
+
+        // Auto-Capitalize Listener (Desc)
+        const descInput = document.getElementById('input-desc');
+        if (descInput) {
+            descInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.toUpperCase();
+            });
+        }
+
         saveManualBtn.addEventListener('click', async () => {
             const isEditMode = saveManualBtn.getAttribute('data-edit-mode') === 'true';
 
@@ -354,36 +468,24 @@ function setupManualInput() {
             const cat = document.getElementById('input-cat').value;
             const asset = document.getElementById('input-asset').value;
 
-            if (!amountRaw || !desc) {
+            // Strip dots for saving
+            const amount = parseInt(amountRaw.replace(/\./g, ''));
+
+            if (!amount || isNaN(amount) || !desc) {
                 hideManualModal();
                 showModal("ERROR", "Mohon isi semua data!");
                 return;
             }
 
-            let amount;
-            if (cat === 'INVEST' || cat === 'BITCOIN') {
-                amount = parseFloat(amountRaw.replace(',', '.'));
-            } else {
-                amount = parseFloat(amountRaw.replace(/\./g, '').replace(/,/g, ''));
-            }
-
-            if (isNaN(amount)) {
-                hideManualModal();
-                showModal("ERROR", "Nominal tidak valid!");
-                return;
-            }
-
-            // Determine BG Color
-            // (Duplicated logic for now, could be util)
-            let bgClass = "bg-yellow";
-            if (cat === "INCOME") bgClass = "bg-green";
+            // Determine Background Color Logic (replicated)
+            let bgClass = "bg-white";
+            if (cat === "INCOME") bgClass = "bg-lime";
+            else if (cat === "FOOD") bgClass = "bg-yellow";
             else if (cat === "BILLS") bgClass = "bg-pink";
             else if (cat === "SHOPPING") bgClass = "bg-orange";
             else if (cat === "LEISURE") bgClass = "bg-purple";
             else if (cat === "TRANSPORT") bgClass = "bg-blue";
             else if (cat === "HEALTH") bgClass = "bg-cyan";
-            else if (cat === "INVEST" || cat === "BITCOIN") bgClass = "bg-orange";
-            else if (cat === "EDUCATION") bgClass = "bg-white";
 
             const docData = {
                 desc, cat, amount, bg: bgClass,
@@ -394,6 +496,26 @@ function setupManualInput() {
                 if (isEditMode) {
                     const editId = saveManualBtn.getAttribute('data-edit-id');
                     const editCollection = saveManualBtn.getAttribute('data-edit-collection');
+                    const originalDataStr = saveManualBtn.getAttribute('data-original');
+
+                    // Check for changes
+                    if (originalDataStr) {
+                        const originalData = JSON.parse(originalDataStr);
+                        // Compare relevant fields
+                        const isSame =
+                            originalData.amount === docData.amount &&
+                            originalData.desc === docData.desc &&
+                            originalData.cat === docData.cat &&
+                            originalData.asset === docData.asset;
+
+                        if (isSame) {
+                            hideManualModal();
+                            showModal("INFO", "Tidak ada perubahan data.");
+                            if (window.soundManager) window.soundManager.playClick();
+                            return; // Stop here
+                        }
+                    }
+
                     await updateTransaction(editCollection, editId, docData);
                     showModal("BERHASIL!", "Transaksi berhasil diupdate.");
                 } else {
@@ -413,15 +535,19 @@ function setupManualInput() {
 }
 
 function handleEditTransaction(payload) {
+    // Open modal first to reset form
+    closeContextMenu();
+    window.openManualModal();
+
     const item = payload.data;
 
     // Pre-fill
-    document.getElementById('input-amount').value = item.amount;
+    // Format amount with dots
+    document.getElementById('input-amount').value = item.amount.toLocaleString('id-ID');
     document.getElementById('input-desc').value = item.desc;
     document.getElementById('input-cat').value = item.cat;
 
     // Update custom dropdown UI for 'cat'
-    // Simplified: Trigger change event so listeners update the UI text
     updateCustomDropdownUI('cat', item.cat);
 
     // Save Button Mode
@@ -431,20 +557,62 @@ function handleEditTransaction(payload) {
     saveBtn.setAttribute('data-edit-id', payload.id);
     saveBtn.setAttribute('data-edit-collection', payload.collection);
 
-    closeContextMenu();
-    window.openManualModal();
+    // Store original data for "No Change" check
+    // We only care about editable fields
+    const originalState = {
+        amount: item.amount,
+        desc: item.desc,
+        cat: item.cat,
+        asset: item.asset || null
+    };
+    saveBtn.setAttribute('data-original', JSON.stringify(originalState));
 }
 
 function handleDeleteTransaction(payload) {
-    showConfirm("HAPUS TRANSAKSI?", "Yakin ingin menghapus transaksi ini permanently?", async () => {
-        try {
-            await deleteTransaction(payload.collection, payload.id);
-            closeContextMenu();
-            showModal("BERHASIL", "Transaksi dihapus.");
-        } catch (e) {
-            showModal("ERROR", "Gagal menghapus.");
-        }
-    });
+    // Undo Logic: Temporarily hide items, show toast, if no undo -> delete
+    closeContextMenu();
+
+    // Optimistic UI: Hide immediately
+    // Since we don't have direct access to DOM element here easily without ID,
+    // we will reload data after delete. But for Undo, we'll delay the delete call.
+
+    // Actually, let's use the new showUndoToast from Modals
+    if (window.showUndoToast) {
+        let isUndone = false;
+
+        // Show Toast
+        window.showUndoToast("Transaksi akan dihapus...", () => {
+            // On Undo
+            isUndone = true;
+            if (window.soundManager) window.soundManager.playClick();
+            // No action needed, we basically just didn't delete it
+        });
+
+        // Actual Delete after 3 seconds if not undone
+        setTimeout(async () => {
+            if (!isUndone) {
+                try {
+                    await deleteTransaction(payload.collection, payload.id);
+                    // Refresh happens automatically via onSnapshot usually, implies UI update
+                    if (window.soundManager) window.soundManager.playSuccess(); // Deletion sound
+                } catch (e) {
+                    console.error("Delete failed", e);
+                }
+            }
+        }, 3000);
+
+    } else {
+        // Fallback to old Confirm
+        showConfirm("HAPUS TRANSAKSI?", "Yakin ingin menghapus transaksi ini permanently?", async () => {
+            try {
+                await deleteTransaction(payload.collection, payload.id);
+                closeContextMenu();
+                showModal("BERHASIL", "Transaksi dihapus.");
+            } catch (e) {
+                showModal("ERROR", "Gagal menghapus.");
+            }
+        });
+    }
 }
 
 // Helper: Custom Dropdowns (Migrated from old app.js)

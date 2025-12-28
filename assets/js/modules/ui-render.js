@@ -115,12 +115,24 @@ export function updateBudgetUI(sums) {
     };
 
     budgetContainer.innerHTML = '';
-    const BUDGET_LIMITS = getBudgetLimits(); // Get dynamic limits
 
-    Object.keys(BUDGET_LIMITS).forEach((cat, index) => {
+    // Define Categories to show (Standard Expense Categories)
+    const CATEGORIES = ['FOOD', 'BILLS', 'SHOPPING', 'LEISURE', 'TRANSPORT', 'HEALTH', 'EDUCATION'];
+
+    // Calculate Total Expense for these categories
+    let totalTrackedExpense = 0;
+    CATEGORIES.forEach(cat => {
+        totalTrackedExpense += (sums[cat] || 0);
+    });
+
+    // Avoid division by zero
+    if (totalTrackedExpense === 0) totalTrackedExpense = 1;
+
+    CATEGORIES.forEach((cat, index) => {
         const spent = sums[cat] || 0;
-        const limit = BUDGET_LIMITS[cat];
-        const percent = Math.min(Math.round((spent / limit) * 100), 100);
+
+        // Calculate Percentage of Total
+        const percent = Math.round((spent / totalTrackedExpense) * 100);
         const barColor = COLOR_MAP[cat] || 'bg-primary';
 
         const itemHtml = `
@@ -128,7 +140,7 @@ export function updateBudgetUI(sums) {
                 <span class="text-bold">${cat}</span>
                 <span class="text-bold">Rp ${spent.toLocaleString()}</span>
             </div>
-            <div class="progress ${index === Object.keys(BUDGET_LIMITS).length - 1 ? '' : 'mb-3'}">
+            <div class="progress ${index === CATEGORIES.length - 1 ? '' : 'mb-3'}">
                 <div class="progress-bar ${barColor}" style="width: ${percent}%;"></div>
             </div>
         `;

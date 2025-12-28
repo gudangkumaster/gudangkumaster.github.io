@@ -2,6 +2,34 @@
 const settingsHTML = `
 <div id="settings-content">
     <div class="settings-content" style="padding: 15px; display: flex; flex-direction: column; gap: 20px;">
+        <!-- API Key Panel -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header"
+                style="background: transparent; border-bottom: none; padding: 15px 15px 0 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 1.5rem;">🔑</span>
+                    <h2
+                        style="margin: 0; font-size: 1.1rem; letter-spacing: 2px; font-weight: 900; color: #555; font-family: 'Courier New', Courier, monospace;">
+                        GEMINI API KEY</h2>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 15px; padding-top: 5px;">
+                <p style="margin: 0 0 10px 0; font-size: 0.85rem; opacity: 0.8; font-weight: bold; line-height: 1.4;">
+                    Required for Receipt Scanner.</p>
+                <div class="form-group mb-2" style="position: relative;">
+                    <input type="password" id="input-gemini-key" class="form-control" placeholder="Paste your API Key here..."
+                        style="border: 3px solid #000; font-family: monospace; letter-spacing: 1px; padding-right: 40px; box-shadow: none;">
+                    <span id="toggle-key-vis" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; opacity: 0.7;">
+                        👁️
+                    </span>
+                </div>
+                <button id="save-key-btn" class="btn btn-primary btn-block text-bold"
+                    style="font-size: 0.9rem; padding: 10px; border: 3px solid #000; box-shadow: none;">
+                    SAVE API KEY
+                </button>
+            </div>
+        </div>
+
         <!-- Click Sound Panel -->
         <div class="card" style="margin-bottom: 0;">
             <div class="card-header"

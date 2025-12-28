@@ -58,6 +58,58 @@ window.initSettings = function () {
     // Init Home Settings UI
     if (window.initHomeSettingsUI) window.initHomeSettingsUI();
 
+    // --- API Key Logic ---
+    const apiKeyInput = document.getElementById('input-gemini-key');
+    const saveKeyBtn = document.getElementById('save-key-btn');
+    const toggleKeyVis = document.getElementById('toggle-key-vis');
+
+    // Load existing key
+    const existingKey = localStorage.getItem('gemini_api_key');
+    if (apiKeyInput && existingKey) {
+        apiKeyInput.value = existingKey;
+    }
+
+    // Visibility Toggle
+    if (toggleKeyVis && apiKeyInput) {
+        toggleKeyVis.onclick = () => {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                toggleKeyVis.textContent = '🔒';
+            } else {
+                apiKeyInput.type = 'password';
+                toggleKeyVis.textContent = '👁️';
+            }
+        };
+    }
+
+    if (saveKeyBtn && apiKeyInput) {
+        // Enter Key Listener
+        apiKeyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveKeyBtn.click();
+            }
+        });
+
+        saveKeyBtn.onclick = () => {
+            const val = apiKeyInput.value.trim();
+            if (val) {
+                localStorage.setItem('gemini_api_key', val);
+                if (window.showAppModal) {
+                    window.showAppModal("SIMPAN BERHASIL", "API Key berhasil disimpan! Scanner siap digunakan.");
+                } else {
+                    alert('API Key Saved!');
+                }
+                if (window.soundManager) window.soundManager.playSuccess();
+            } else {
+                localStorage.removeItem('gemini_api_key');
+                if (window.showAppModal) {
+                    window.showAppModal("DIHAPUS", "API Key telah dihapus.");
+                }
+            }
+        };
+    }
+
     // Clear Cache Listener
     const clearCacheBtn = document.getElementById('clear-cache-btn');
     if (clearCacheBtn) {

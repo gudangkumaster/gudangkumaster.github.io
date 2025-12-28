@@ -4,7 +4,7 @@
  * ES Module Format
  */
 
-import { db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, serverTimestamp, fetchAssetPrices } from '../api.js';
+import { db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, serverTimestamp, fetchAssetPrices, query } from '../api.js';
 
 let incomeData = [];
 let expensesData = [];
@@ -123,4 +123,4 @@ export async function deleteTransaction(collectionName, id) {
 }
 
 // Helper to re-export useful imports if needed, or just keep them internal
-import { query } from '../api.js';
+// import { query } from '../api.js'; // Removed redundant import

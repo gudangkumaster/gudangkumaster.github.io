@@ -39,6 +39,11 @@ export function initModals() {
         });
     }
 
+    const closeCatFilterX = getEl('close-cat-filter-x');
+    if (closeCatFilterX) {
+        closeCatFilterX.addEventListener('click', hideCategoryFilterModal);
+    }
+
     // Confirmation Modal Listeners
     if (confirmYesBtn && confirmModal) {
         confirmYesBtn.addEventListener('click', () => {
@@ -69,7 +74,7 @@ export function initModals() {
     window.hideManualModal = hideManualModal;
 
     // --- Click Outside to Close ---
-    const overlays = ['manual-modal', 'nb-custom-modal', 'scan-options-modal', 'confirm-modal'];
+    const overlays = ['manual-modal', 'nb-custom-modal', 'scan-options-modal', 'confirm-modal', 'category-filter-modal'];
     overlays.forEach(id => {
         const el = getEl(id);
         if (el) {
@@ -77,6 +82,7 @@ export function initModals() {
                 if (e.target === el) {
                     if (id === 'manual-modal') hideManualModal();
                     else if (id === 'nb-custom-modal') hideModal();
+                    else if (id === 'category-filter-modal') hideCategoryFilterModal();
                     else {
                         el.classList.remove('active');
                         document.body.classList.remove('modal-open');
@@ -89,6 +95,8 @@ export function initModals() {
             });
         }
     });
+
+    // (Esc listener moved to initApp for stability)
 }
 
 export function showModal(title, message) {
@@ -104,12 +112,35 @@ export function showModal(title, message) {
     // Play alert sound based on title
     if (window.soundManager) {
         const titleLower = title.toLowerCase();
-        if (titleLower.includes('berhasil') || titleLower.includes('success')) {
+        if (titleLower.includes('berhasil') || titleLower.includes('success') || titleLower.includes('info')) {
             window.soundManager.playSuccess();
+
+            // Auto-Close Progress Bar Animation
+            const progressBar = document.getElementById('modal-progress-bar');
+            if (progressBar) {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '100%';
+                void progressBar.offsetWidth;
+                progressBar.style.transition = 'width 2s linear';
+                progressBar.style.width = '0%';
+            }
+
+            // Auto-Close
+            setTimeout(() => {
+                const currentModal = getEl('nb-custom-modal');
+                if (currentModal && currentModal.classList.contains('active')) {
+                    const currentTitle = getEl('modal-title').innerText;
+                    if (currentTitle === title) hideModal();
+                }
+            }, 2200);
         } else if (titleLower.includes('error') || titleLower.includes('gagal')) {
             window.soundManager.playError();
+            const progressBar = document.getElementById('modal-progress-bar');
+            if (progressBar) progressBar.style.width = '0%';
         } else {
-            window.soundManager.playSuccess(); // Default to success
+            window.soundManager.playSuccess();
+            const progressBar = document.getElementById('modal-progress-bar');
+            if (progressBar) progressBar.style.width = '0%';
         }
     }
 }
@@ -163,6 +194,11 @@ export function openManualModal() {
             saveBtn.removeAttribute('data-edit-collection');
         }
 
+        // Auto Focus on Amount
+        if (amountInput) {
+            setTimeout(() => amountInput.focus(), 100);
+        }
+
         manualModal.classList.add('active');
         document.body.classList.add('modal-open');
         if (window.pausePTR) window.pausePTR();
@@ -209,4 +245,82 @@ export function showConfirm(title, message, onConfirm) {
     if (window.pausePTR) window.pausePTR();
 
     if (window.soundManager) window.soundManager.playAlert();
+}
+
+// --- Toast / Undo Logic ---
+export function showUndoToast(message, onUndo, duration = 3000) {
+    // Check if toast container exists, if not create it
+    let toast = document.getElementById('undo-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'undo-toast';
+        toast.style.cssText = `
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #000; color: #fff; padding: 15px 25px;
+            border: 3px solid #000; box-shadow: 4px 4px 0px #fff;
+            display: flex; align-items: center; gap: 15px; z-index: 10000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 90%; max-width: 400px; justify-content: space-between;
+        `;
+        toast.innerHTML = `
+            <span id="toast-msg" style="font-weight: bold; font-family: 'Courier New', monospace;"></span>
+            <button id="toast-undo-btn" style="
+                background: #FF00FF; color: #000; border: 2px solid #fff; 
+                padding: 5px 15px; font-weight: 900; cursor: pointer;
+                box-shadow: 2px 2px 0px #fff;
+            ">UNDO</button>
+        `;
+        document.body.appendChild(toast);
+    }
+
+    const msgEl = toast.querySelector('#toast-msg');
+    const undoBtn = toast.querySelector('#toast-undo-btn');
+
+    msgEl.textContent = message;
+
+    // Show Toast
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    // Cleanup previous timer
+    if (window.undoTimer) clearTimeout(window.undoTimer);
+
+    // Setup Undo
+    undoBtn.onclick = () => {
+        if (onUndo) onUndo();
+        hideUndoToast();
+    };
+
+    // Auto Hide
+    window.undoTimer = setTimeout(() => {
+        hideUndoToast();
+    }, duration);
+}
+
+function hideUndoToast() {
+    const toast = document.getElementById('undo-toast');
+    if (toast) {
+        toast.style.transform = 'translateX(-50%) translateY(150%)';
+    }
+}
+
+// --- Category Filter Logic ---
+export function showCategoryFilterModal() {
+    const modal = getEl('category-filter-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.classList.add('modal-open');
+        if (window.pausePTR) window.pausePTR();
+        if (window.soundManager) window.soundManager.playClick();
+    }
+}
+
+export function hideCategoryFilterModal() {
+    const modal = getEl('category-filter-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        if (window.resumePTR) window.resumePTR();
+    }
 }

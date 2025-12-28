@@ -123,11 +123,27 @@ async function compressImage(file, maxSizeKB = 200) {
 }
 
 // Gemini AI Receipt Scanner
-const GEMINI_API_KEY = 'AIzaSyD6out1E3U6uvip-4__mpolzUP62NKx0R4';
+// Gemini AI Receipt Scanner
+// const GEMINI_API_KEY = 'LEGACY_KEY_REMOVED'; 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 export async function scanReceiptWithGemini(imageFile) {
     try {
+        // Retrieve API Key from Storage
+        const GEMINI_API_KEY = localStorage.getItem('gemini_api_key');
+
+        // Debug Log (Masked)
+        if (GEMINI_API_KEY) {
+            console.log("🔑 Using Custom API Key:", GEMINI_API_KEY.substring(0, 8) + "..." + GEMINI_API_KEY.substring(GEMINI_API_KEY.length - 4));
+        } else {
+            console.error("❌ No API Key found in settings!");
+        }
+
+        if (!GEMINI_API_KEY) {
+            alert("API Key belum diset! Silakan ke menu Settings.");
+            throw new Error('NO_API_KEY');
+        }
+
         // Compress image first
         const compressedFile = await compressImage(imageFile, 200);
         console.log(`Image compressed: ${(imageFile.size / 1024).toFixed(2)}KB → ${(compressedFile.size / 1024).toFixed(2)}KB`);
@@ -170,9 +186,16 @@ Rules:
                         }
                     }
                 ]
-            }]
+            }],
+            safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
         };
 
+        console.log("🚀 Sending request to Gemini...");
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
@@ -182,22 +205,45 @@ Rules:
         });
 
         if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`Gemini API Error (${response.status}):`, errorText);
+            throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        const textResponse = data.candidates[0].content.parts[0].text;
+        console.log("✅ Gemini Raw Response:", data);
 
-        // Parse JSON from response (remove markdown if present)
-        const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('No JSON found in response');
+        if (!data.candidates || data.candidates.length === 0) {
+            console.error("❌ No candidates returned. Safety ratings might have blocked it:", data.promptFeedback);
+            throw new Error('No candidates returned from Gemini');
         }
 
-        const result = JSON.parse(jsonMatch[0]);
+        let textResponse = data.candidates[0].content.parts[0].text;
+
+        // Clean up markdown code blocks if present ( ```json ... ``` )
+        textResponse = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // Parse JSON
+        let result;
+        try {
+            // Find the first '{' and last '}' to extract valid JSON
+            const firstBrace = textResponse.indexOf('{');
+            const lastBrace = textResponse.lastIndexOf('}');
+
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                const jsonString = textResponse.substring(firstBrace, lastBrace + 1);
+                result = JSON.parse(jsonString);
+            } else {
+                throw new Error("No JSON braces found");
+            }
+        } catch (parseErr) {
+            console.error("❌ JSON Parse Error:", parseErr, "Raw Text:", textResponse);
+            throw new Error('Failed to parse Gemini response as JSON');
+        }
 
         // Validate result
         if (!result.amount || !result.description || !result.category) {
+            console.error("❌ Invalid structure:", result);
             throw new Error('Invalid response structure');
         }
 

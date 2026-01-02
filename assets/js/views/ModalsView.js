@@ -71,11 +71,6 @@ const modalsHTML = `
                 <input type="text" id="input-amount" class="form-control" placeholder="Example: 50000 or 0.005">
             </div>
             <div class="form-group">
-                <label class="form-label">DESCRIPTION / NAME</label>
-                <input type="text" id="input-desc" class="form-control" placeholder="Example: Coffee"
-                    style="text-transform: uppercase;">
-            </div>
-            <div class="form-group">
                 <label class="form-label">CATEGORY</label>
                 <div class="custom-select-wrapper">
                     <div class="custom-select-trigger" id="cat-select-trigger">
@@ -107,6 +102,11 @@ const modalsHTML = `
                     </select>
                 </div>
             </div>
+            <div class="form-group">
+                <label class="form-label">DESCRIPTION / NAME</label>
+                <input type="text" id="input-desc" class="form-control" placeholder="Example: Coffee"
+                    style="text-transform: uppercase;">
+            </div>
             <div id="asset-group" class="form-group" style="display: none;">
                 <label class="form-label">ASSET TYPE</label>
                 <div class="custom-select-wrapper">
@@ -126,6 +126,10 @@ const modalsHTML = `
                         <option value="zerebro">ZEREBRO (ZRB)</option>
                     </select>
                 </div>
+            </div>
+            <div id="coin-amount-group" class="form-group" style="display: none;">
+                <label class="form-label">COIN RECEIVED</label>
+                <input type="text" id="input-coin-amount" class="form-control" placeholder="Example: 0.005">
             </div>
         </div>
         <div class="modal-footer">

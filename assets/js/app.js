@@ -463,14 +463,30 @@ function setupManualInput() {
     setupCustomDropdown('asset'); // Optional
 
     // Invest Logic: Show/Hide Asset Type
+    // Invest Logic: Show/Hide Asset Type
     const catSelect = document.getElementById('input-cat');
     const assetGroup = document.getElementById('asset-group');
+    const coinGroup = document.getElementById('coin-amount-group'); // New
+
     if (catSelect && assetGroup) {
         catSelect.addEventListener('change', () => {
+            const amountLabel = document.querySelector('label[for="input-amount"]') ||
+                (document.getElementById('input-amount') ? document.getElementById('input-amount').previousElementSibling : null);
+
             if (catSelect.value === 'INVEST') {
                 assetGroup.style.display = 'block';
+                if (coinGroup) coinGroup.style.display = 'block';
+                if (amountLabel) amountLabel.innerText = 'RUPIAH SPENT';
+                // Hide Description for Invest
+                const descGroup = document.getElementById('input-desc').closest('.form-group');
+                if (descGroup) descGroup.style.display = 'none';
             } else {
                 assetGroup.style.display = 'none';
+                if (coinGroup) coinGroup.style.display = 'none';
+                if (amountLabel) amountLabel.innerText = 'TOTAL AMOUNT';
+                // Show Description for others
+                const descGroup = document.getElementById('input-desc').closest('.form-group');
+                if (descGroup) descGroup.style.display = 'block';
             }
         });
     }
@@ -515,13 +531,24 @@ function setupManualInput() {
             const isEditMode = saveManualBtn.getAttribute('data-edit-mode') === 'true';
 
             // Get inputs
+            // Get inputs
             let amountRaw = document.getElementById('input-amount').value.trim();
-            const desc = document.getElementById('input-desc').value.trim().toUpperCase();
             const cat = document.getElementById('input-cat').value;
             const asset = document.getElementById('input-asset').value;
+            const coinAmountRaw = document.getElementById('input-coin-amount') ? document.getElementById('input-coin-amount').value : '0';
 
             // Strip dots for saving
             const amount = parseInt(amountRaw.replace(/\./g, ''));
+
+            let descElement = '';
+            // Override Desc for Invest
+            if (cat === 'INVEST' || cat === 'BITCOIN') {
+                // Use selected Asset Value (Uppercase) e.g. bitcoin -> BITCOIN
+                descElement = asset.toUpperCase();
+            } else {
+                descElement = document.getElementById('input-desc').value.trim().toUpperCase();
+            }
+            const desc = descElement;
 
             if (!amount || isNaN(amount) || !desc) {
                 hideManualModal();
@@ -538,10 +565,12 @@ function setupManualInput() {
             else if (cat === "LEISURE") bgClass = "bg-purple";
             else if (cat === "TRANSPORT") bgClass = "bg-blue";
             else if (cat === "HEALTH") bgClass = "bg-cyan";
+            else if (cat === "INVEST" || cat === "BITCOIN") bgClass = "bg-orange";
 
             const docData = {
                 desc, cat, amount, bg: bgClass,
-                asset: (cat === 'INVEST' || cat === 'BITCOIN') ? asset : null
+                asset: (cat === 'INVEST' || cat === 'BITCOIN') ? asset : null,
+                coinAmount: (cat === 'INVEST' || cat === 'BITCOIN') ? parseFloat(coinAmountRaw.replace(',', '.') || 0) : 0
             };
 
             try {
@@ -558,7 +587,8 @@ function setupManualInput() {
                             originalData.amount === docData.amount &&
                             originalData.desc === docData.desc &&
                             originalData.cat === docData.cat &&
-                            originalData.asset === docData.asset;
+                            originalData.asset === docData.asset &&
+                            originalData.coinAmount === docData.coinAmount;
 
                         if (isSame) {
                             hideManualModal();
@@ -599,6 +629,13 @@ function handleEditTransaction(payload) {
     document.getElementById('input-desc').value = item.desc;
     document.getElementById('input-cat').value = item.cat;
 
+    // Trigger change to update UI (Asset/Coin fields)
+    document.getElementById('input-cat').dispatchEvent(new Event('change'));
+
+    // Pre-fill Coin Amount if exists
+    const coinInput = document.getElementById('input-coin-amount');
+    if (coinInput) coinInput.value = item.coinAmount || '';
+
     // Update custom dropdown UI for 'cat'
     updateCustomDropdownUI('cat', item.cat);
 
@@ -615,7 +652,8 @@ function handleEditTransaction(payload) {
         amount: item.amount,
         desc: item.desc,
         cat: item.cat,
-        asset: item.asset || null
+        asset: item.asset || null,
+        coinAmount: item.coinAmount || 0
     };
     saveBtn.setAttribute('data-original', JSON.stringify(originalState));
 }
@@ -727,4 +765,9 @@ function updateCustomDropdownUI(prefix, value) {
 }
 
 // Start
-document.addEventListener('DOMContentLoaded', initApp);
+// Start
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}

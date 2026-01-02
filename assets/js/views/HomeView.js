@@ -191,6 +191,9 @@ const homeHTML = `
             </div>
         </div>
         <div class="mt-1 p-3 bg-white" style="border: 3px solid #000;">
+             <!-- Date Range Indicator (Moved here) -->
+             <div id="analytics-date-range" class="text-left mb-3 text-muted text-bold" style="font-size: 0.8rem;">...</div>
+
              <!-- Income Progress -->
              <div class="nb-flex-between mb-1">
                  <span class="text-bold">INCOME</span>

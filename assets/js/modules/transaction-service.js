@@ -24,14 +24,20 @@ export function initTransactionService(onDataChange) {
         console.log(`📥 Income Update: ${snapshot.docs.length} docs`);
         incomeData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         processData();
-    }, (err) => console.error("❌ Income Listen Error", err));
+    }, (err) => {
+        console.error("❌ Income Listen Error", err);
+        if (window.showModal) window.showModal("ERROR", "Gagal memuat data Transaksi (Income). Cek koneksi internet.");
+    });
 
     const expenseRef = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
     onSnapshot(expenseRef, (snapshot) => {
         console.log(`📤 Expense Update: ${snapshot.docs.length} docs`);
         expensesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         processData();
-    }, (err) => console.error("❌ Expense Listen Error", err));
+    }, (err) => {
+        console.error("❌ Expense Listen Error", err);
+        if (window.showModal) window.showModal("ERROR", "Gagal memuat data Transaksi (Expense). Cek koneksi internet.");
+    });
 
     // Asset Prices
     updateAssetPrices();
@@ -62,7 +68,21 @@ function processData() {
     const categorySums = {}; // Will populate dynamically
 
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Salary Cycle: 25th of Previous Month to 24th of Current Month
+    // Example: Today is Jan 10. Cycle is Dec 25 - Jan 24.
+    // Example: Today is Jan 26. Cycle is Jan 25 - Feb 24.
+
+    let cycleStart, cycleEnd;
+
+    if (now.getDate() >= 25) {
+        // We are in the "Next Month's" cycle (e.g., Jan 26 belongs to Feb report)
+        cycleStart = new Date(now.getFullYear(), now.getMonth(), 25);
+        cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, 24, 23, 59, 59);
+    } else {
+        // We are in the "Current Month's" cycle (e.g., Jan 10 belongs to Jan report, started Dec 25)
+        cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, 25);
+        cycleEnd = new Date(now.getFullYear(), now.getMonth(), 24, 23, 59, 59);
+    }
 
     // Helper for safe date parsing
     const getDate = (item) => (item.createdAt && typeof item.createdAt.toDate === 'function') ? item.createdAt.toDate() : new Date();
@@ -71,23 +91,39 @@ function processData() {
 
     allTransactions.forEach((item) => {
         const itemDate = getDate(item);
-        const isThisMonth = itemDate >= startOfMonth;
+        // Check if item is within current salary cycle
+        const isThisCycle = itemDate >= cycleStart && itemDate <= cycleEnd;
 
         if (item.cat === 'INCOME') {
             totalIncome += item.amount;
             totalBalance += item.amount;
-            if (isThisMonth) monthlyIncome += item.amount;
+            if (isThisCycle) monthlyIncome += item.amount;
         } else if (item.cat === 'INVEST' || item.cat === 'BITCOIN') {
             const price = assetPrices[item.asset || 'bitcoin'] || 0;
-            totalInvestIDR += Math.round(item.amount * price);
+            // Legacy support: if coinAmount missing, use amount (old behavior)
+            const qty = (item.coinAmount !== undefined) ? item.coinAmount : item.amount;
+            totalInvestIDR += Math.round(qty * price);
+
+            // Deduct from Cash (Treat as Expense)
+            totalExpense += item.amount;
+            totalBalance -= item.amount;
+            if (isThisCycle) monthlyExpense += item.amount;
+
+            // Add to Category Sums (so it shows in charts/budget)
+            if (isThisCycle) {
+                if (!categorySums[item.cat]) categorySums[item.cat] = 0;
+                categorySums[item.cat] += item.amount;
+            }
         } else {
             totalExpense += item.amount;
             totalBalance -= item.amount;
-            if (isThisMonth) monthlyExpense += item.amount;
+            if (isThisCycle) monthlyExpense += item.amount;
 
-            // Sum Categories
-            if (!categorySums[item.cat]) categorySums[item.cat] = 0;
-            categorySums[item.cat] += item.amount;
+            // Sum Categories if in cycle
+            if (isThisCycle) {
+                if (!categorySums[item.cat]) categorySums[item.cat] = 0;
+                categorySums[item.cat] += item.amount;
+            }
         }
     });
 

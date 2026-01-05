@@ -92,7 +92,21 @@ export function showLoadingState() {
     if (marqueeEl) marqueeEl.innerText = '⟳ MEMUAT DATA TERBARU...';
 }
 
-export function updateDashboard(cashBalance, finalTotal, totalExpense, totalInvest) {
+// State for Invest Trend
+let lastInvestValue = null;
+let currentTrend = 'neutral'; // 'up', 'down', 'neutral'
+
+// Load persisted state
+try {
+    const savedInvest = localStorage.getItem('lastInvestValue');
+    const savedTrend = localStorage.getItem('currentTrend');
+    if (savedInvest) lastInvestValue = parseFloat(savedInvest);
+    if (savedTrend) currentTrend = savedTrend;
+} catch (e) {
+    console.warn('Invest State Load Error', e);
+}
+
+export function updateDashboard(cashBalance, finalTotal, totalExpense, totalInvest, assetBreakdown) {
     const headerIncomeSisaEl = document.getElementById('header-income-sisa');
     const rowTotalBalanceEl = document.getElementById('row-total-balance');
     const expenseEl = document.getElementById('total-expense');
@@ -105,40 +119,78 @@ export function updateDashboard(cashBalance, finalTotal, totalExpense, totalInve
     // Re-query investEl to ensure we have the live element (since HomeView injects it later)
     const investEl = document.getElementById('total-invest');
     if (investEl) {
-        investEl.innerText = `Rp ${Math.round(totalInvest).toLocaleString('id-ID')}`;
+        // Trend Logic
+        if (lastInvestValue !== null && totalInvest !== lastInvestValue) {
+            if (totalInvest > lastInvestValue) {
+                currentTrend = 'up';
+            } else if (totalInvest < lastInvestValue) {
+                currentTrend = 'down';
+            }
+            // If equal, keep previous trend (don't reset to neutral immediately to show stability?) 
+            // Or strictly: equal = neutral? 
+            // Usually simpler to just keep the last direction until it changes or render nothing if equal?
+            // Let's keep the last active trend for visual flair, or update only on change.
+        }
 
-        // Remove old listener (cloneNode approach or simple overwrite)
-        // Simple approach: Set onclick directly to avoid stacking listeners
+        // If this is the VERY first run ever (no saved state), and we have data
+        if (lastInvestValue === null) {
+            // Init without trend
+            currentTrend = 'neutral';
+        }
+
+        // Save State
+        lastInvestValue = totalInvest;
+        localStorage.setItem('lastInvestValue', totalInvest);
+        localStorage.setItem('currentTrend', currentTrend);
+
+        // Render Trend
+        let trendHtml = '';
+        if (currentTrend === 'up') {
+            trendHtml = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#000000" stroke="none" style="margin-left: 5px; vertical-align: middle;">
+                <path d="M12 4l-8 8h16l-8-8z"></path>
+            </svg>`;
+        } else if (currentTrend === 'down') {
+            trendHtml = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#000000" stroke="none" style="margin-left: 5px; vertical-align: middle;">
+                <path d="M12 20l-8-8h16l-8 8z"></path>
+            </svg>`;
+        }
+
+        investEl.innerHTML = `Rp ${Math.round(totalInvest).toLocaleString('id-ID')}${trendHtml}`;
+
+        // Interaction Logic: Right Click & Long Press
         const card = investEl.closest('.card');
-
-        // Note: assetBreakdown is not passed here in the original code signature, 
-        // checking context... 
-        // It seems assetBreakdown is GLOBAL or passed via closure in original? 
-        // Wait, the original code had `showInvestDetails(assetBreakdown, totalInvest)` 
-        // but `assetBreakdown` was NOT defined in `updateDashboard` scope in the file I read.
-        // It must have been a bug in the code I read or it was using a global.
-        // I will check if `window.lastAssetBreakdown` exists or just log it for now.
-        // To be safe, let's assume we need to get it from somewhere or it was a bug.
-        // Ah, `transaction-service.js` DOES NOT pass assetBreakdown in `onDataChangeCallback`!
-        // It passes `categorySums`. 
-        // So the click handler might have been broken before. 
-        // I will comment out the click handler part unless I can find where assetBreakdown comes from.
-        // Actually, looking at previous steps, `transaction-service.js` doesn't seem to export asset breakdowns detailedly.
-        // I'll leave the click handler logic but guard `assetBreakdown`.
-
         if (card) {
+            // Debug Log
+            console.log('✅ Attaching Interact Listeners to Invest Card', assetBreakdown);
+
             card.style.cursor = 'pointer';
-            card.onclick = (e) => {
-                // e.stopPropagation(); 
-                // showInvestDetails(window.lastAssetBreakdown || {}, totalInvest);
-                // For now, let's just log as it seems to be a pre-existing missing var
-                console.log('Invest Card Clicked');
+
+            // Clean previous listeners (simple overwrite)
+            card.oncontextmenu = (e) => {
+                e.preventDefault();
+                console.log('🖱️ Right Click detected on Invest Card');
+                showInvestDetails(assetBreakdown, totalInvest);
             };
+
+            let pressTimer;
+            card.ontouchstart = (e) => {
+                pressTimer = setTimeout(() => {
+                    console.log('👆 Long Press detected on Invest Card');
+                    showInvestDetails(assetBreakdown, totalInvest);
+                }, 500); // 500ms Long Press
+            };
+            card.ontouchend = () => clearTimeout(pressTimer);
+            card.ontouchmove = () => clearTimeout(pressTimer);
         }
     }
 }
 
 function showInvestDetails(breakdown, total) {
+    console.log('Show Invest Details:', breakdown, total);
+    // Generate HTML
+    console.log('Show Invest Details:', breakdown, total);
     // Generate HTML
     let listHtml = '';
 

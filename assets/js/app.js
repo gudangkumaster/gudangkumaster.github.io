@@ -13,6 +13,16 @@ import "./modules/calendar-manager.js";
 // Make API Validator available globally for settings.js
 window.validateGeminiApiKey = validateGeminiApiKey;
 
+// Ensure Modals are global
+window.showModal = showModal;
+window.showConfirm = showConfirm;
+window.showUndoToast = (msg, undo, duration) => {
+    // Lazy load or access from modals module if possible
+    // Checking where showUndoToast is imported... not imported in app.js usually.
+    // It's in modules/modals.js export. 
+    // We should import it to expose it if needed, or rely on modals.js init.
+};
+
 // --- Pull To Refresh Setup (Global Wrappers for SPA) ---
 window.currentPTR = null;
 
@@ -218,7 +228,7 @@ async function initApp() {
     initTransactionService((data) => {
         console.log('📊 Update Received:', data);
         // Update Dashboard with Monthly Expense, but All-Time Balance
-        updateDashboard(data.cashBalance, data.finalTotalValue, data.monthlyExpense, data.totalInvest);
+        updateDashboard(data.cashBalance, data.finalTotalValue, data.monthlyExpense, data.totalInvest, data.itemBreakdown);
 
         // Store category sums globally for budget refresh
         window.lastCategorySums = data.categorySums;

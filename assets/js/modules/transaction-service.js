@@ -89,6 +89,13 @@ function processData() {
 
     const allTransactions = [...incomeData, ...expensesData].sort((a, b) => getDate(b) - getDate(a));
 
+    // Asset Breakdown Calculation
+    const assetBreakdown = {
+        'BITCOIN': { quantity: 0, value: 0 },
+        'ETHEREUM': { quantity: 0, value: 0 },
+        'ZEREBRO': { quantity: 0, value: 0 }
+    };
+
     allTransactions.forEach((item) => {
         const itemDate = getDate(item);
         // Check if item is within current salary cycle
@@ -99,10 +106,25 @@ function processData() {
             totalBalance += item.amount;
             if (isThisCycle) monthlyIncome += item.amount;
         } else if (item.cat === 'INVEST' || item.cat === 'BITCOIN') {
+            const assetName = (item.asset || 'bitcoin').toUpperCase();
             const price = assetPrices[item.asset || 'bitcoin'] || 0;
             // Legacy support: if coinAmount missing, use amount (old behavior)
             const qty = (item.coinAmount !== undefined) ? item.coinAmount : item.amount;
-            totalInvestIDR += Math.round(qty * price);
+
+            const currentValue = Math.round(qty * price);
+            totalInvestIDR += currentValue;
+
+            // Update Breakdown
+            if (assetBreakdown[assetName]) {
+                assetBreakdown[assetName].quantity += qty;
+                assetBreakdown[assetName].value += currentValue;
+            } else {
+                // Handle unknown assets dynamically if needed, or map 'BITCOIN' fallback
+                // For now, adhere to defined structure
+                if (assetName === 'BITCOIN' || assetName === 'ETHEREUM' || assetName === 'ZEREBRO') {
+                    // Already handled
+                }
+            }
 
             // Deduct from Cash (Treat as Expense)
             totalExpense += item.amount;
@@ -138,6 +160,7 @@ function processData() {
         monthlyExpense, // New: For Dashboard
         monthlyIncome,  // New: For Dashboard if needed
         totalInvest: totalInvestIDR,
+        itemBreakdown: assetBreakdown, // Export breakdown
         categorySums
     });
 }

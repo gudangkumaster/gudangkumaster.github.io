@@ -68,8 +68,10 @@ export function initModals() {
     }
 
     // Expose globals for other scripts (router, etc.)
-    window.showAppModal = showModal;
+    window.showModal = showModal; // Standardize this
+    window.showAppModal = showModal; // Keep alias
     window.showAppConfirm = showConfirm;
+    window.showConfirm = showConfirm;
     window.openManualModal = openManualModal;
     window.hideManualModal = hideManualModal;
 
